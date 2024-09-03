@@ -6,8 +6,8 @@ import { jettonDeployController } from "lib/deploy-controller";
 import { useState } from "react";
 import WalletConnection from "services/wallet-connection";
 import useJettonStore from "store/jetton-store/useJettonStore";
-import { Address } from "ton";
-import { toDecimalsBN } from "utils";
+import { Address } from "@ton/core";
+import { toDecimals } from "utils";
 import { AppButton } from "components/appButton";
 import { AppNumberInput } from "components/appInput";
 import { useRecoilState } from "recoil";
@@ -37,7 +37,7 @@ function MintJettonsAction() {
       showNotification(`Minimum amount of ${symbol} to mint is 1`, "warning");
       return;
     }
-    const value = toDecimalsBN(amount, decimals!);
+    const value = toDecimals(amount, decimals!);
 
     try {
       setActionInProgress(true);

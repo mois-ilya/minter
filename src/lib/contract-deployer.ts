@@ -1,10 +1,9 @@
-import BN from "bn.js";
-import { Address, beginCell, Cell, contractAddress, StateInit } from "ton";
+import { Address, Cell, StateInit, beginCell, contractAddress, storeStateInit } from "@ton/core";
 import { SendTransactionRequest, TonConnectUI } from "@tonconnect/ui-react";
 
 interface ContractDeployDetails {
   deployer: Address;
-  value: BN;
+  value: bigint;
   code: Cell;
   data: Cell;
   message?: Cell;
@@ -13,20 +12,33 @@ interface ContractDeployDetails {
 
 export class ContractDeployer {
   addressForContract(params: ContractDeployDetails) {
-    return contractAddress({
-      workchain: 0,
-      initialData: params.data,
-      initialCode: params.code,
-    });
+    const workchain = 0;
+    const stateInit = {
+      data: params.data,
+    };
+
+    return contractAddress(workchain, stateInit);
   }
 
   async deployContract(
     params: ContractDeployDetails,
     tonConnection: TonConnectUI,
   ): Promise<Address> {
+    const stateInit: StateInit = {
+      data: params.data,
+      code: params.code,
+    };
+
+    const stateInitBuilder = beginCell();
+    storeStateInit(stateInit)(stateInitBuilder);
+    const cell = stateInitBuilder.endCell();
+
+    console.log("Cell hash", cell.hash().toString("base64"));
+    console.log("Cell gIleIfiSXOBjrReiC5uAvOJuskqTlCaYZBaXo4/df84=");
+
+    // throw new Error("stop");
+
     const _contractAddress = this.addressForContract(params);
-    let cell = new Cell();
-    new StateInit({ data: params.data, code: params.code }).writeTo(cell);
     if (!params.dryRun) {
       const tx: SendTransactionRequest = {
         validUntil: Date.now() + 5 * 60 * 1000,

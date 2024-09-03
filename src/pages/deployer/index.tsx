@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Address } from "ton";
+import { Address } from "@ton/core";
 import { Box, Fade, Link, Typography } from "@mui/material";
 import { jettonDeployController, JettonDeployParams } from "lib/deploy-controller";
 import WalletConnection from "services/wallet-connection";
@@ -17,7 +17,7 @@ import {
 } from "./styles";
 import { Screen, ScreenContent } from "components/Screen";
 import analytics, { AnalyticsAction, AnalyticsCategory } from "services/analytics";
-import { getUrlParam, toDecimalsBN } from "utils";
+import { getUrlParam, toDecimals } from "utils";
 import { offchainFormSpec, onchainFormSpec } from "./data";
 import { Form } from "components/form";
 import { GithubButton } from "pages/deployer/githubButton";
@@ -66,7 +66,7 @@ function DeployerPage() {
         decimals: parseInt(decimals).toFixed(0),
       },
       offchainUri: data.offchainUri,
-      amountToMint: toDecimalsBN(data.mintAmount, decimals ?? DEFAULT_DECIMALS),
+      amountToMint: BigInt(data.mintAmount) * BigInt(decimals ?? DEFAULT_DECIMALS),
     };
     setIsLoading(true);
     const deployParams = createDeployParams(params, data.offchainUri);
@@ -93,7 +93,7 @@ function DeployerPage() {
       analytics.sendEvent(
         AnalyticsCategory.DEPLOYER_PAGE,
         AnalyticsAction.DEPLOY,
-        contractAddress.toFriendly(),
+        contractAddress.toString(),
       );
 
       navigate(`${ROUTES.jetton}/${Address.normalize(result)}`);

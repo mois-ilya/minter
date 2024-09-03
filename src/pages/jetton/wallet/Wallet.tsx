@@ -56,7 +56,7 @@ export const Wallet = () => {
         <DataRow
           title="Wallet Balance"
           value={
-            balance && (
+            balance === undefined ? undefined : (
               <>
                 <BigNumberDisplay value={balance} decimals={decimals} /> {symbol}
               </>

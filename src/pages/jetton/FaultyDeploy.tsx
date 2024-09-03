@@ -5,7 +5,7 @@ import { Popup } from "components/Popup";
 import useJettonStore from "store/jetton-store/useJettonStore";
 import { useState } from "react";
 import { jettonDeployController } from "lib/deploy-controller";
-import { Address } from "ton";
+import { Address } from "@ton/core";
 import { AppButton } from "components/appButton";
 import { useTonAddress, useTonConnectUI } from "@tonconnect/ui-react";
 
@@ -30,18 +30,22 @@ function FaultyDeploy() {
     }
     try {
       setIsLoading(true);
-      await jettonDeployController.fixFaultyJetton(
-        Address.parse(jettonMaster),
-        {
-          symbol,
-          name,
-          description,
-          image: jettonImage,
-        },
-        tonconnect,
-        address,
-      );
-      await getJettonDetails();
+
+      throw new Error("Not implemented");
+
+      // TODO: Implement fixFaultyJetton
+      // await jettonDeployController.fixFaultyJetton(
+      //   Address.parse(jettonMaster),
+      //   {
+      //     symbol,
+      //     name,
+      //     description,
+      //     image: jettonImage,
+      //   },
+      //   tonconnect,
+      //   address,
+      // );
+      // await getJettonDetails();
     } catch (error) {
       console.log(error);
     } finally {

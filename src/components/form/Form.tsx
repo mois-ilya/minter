@@ -172,7 +172,7 @@ export function Form({
                 disabled={spec.disabled}
                 errorMessage={spec.errorMessage}
                 validate={spec.validate}
-                showDefault={spec.showDefault}
+                showDefault={spec.showDefault || true}
               />
             );
           })}

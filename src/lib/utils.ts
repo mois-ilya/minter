@@ -1,7 +1,6 @@
-import BN from "bn.js";
-import { Address, beginCell, Cell, toNano, TonClient, Wallet } from "ton";
+import { Address, beginCell, toNano, TonClient } from "@ton/ton";
 import { JettonDeployParams, JETTON_DEPLOY_GAS } from "./deploy-controller";
-import { initData, JettonMetaDataKeys, JETTON_MINTER_CODE, mintBody } from "./jetton-minter";
+import { initData, JETTON_MINTER_CODE, mintBody } from "./jetton-minter";
 
 export async function sleep(time: number) {
   return new Promise((resolve) => {
@@ -17,10 +16,11 @@ export function zeroAddress(): Address {
     .storeUint(0, 256)
     .endCell()
     .beginParse()
-    .readAddress() as Address;
+    .loadAddress();
 }
 
-export async function waitForSeqno(wallet: Wallet) {
+export async function waitForSeqno(wallet: any) {
+  // todo: type Wallet
   const seqnoBefore = await wallet.getSeqNo();
 
   return async () => {

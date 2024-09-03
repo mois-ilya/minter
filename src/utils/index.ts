@@ -1,7 +1,5 @@
-import BigNumber from "bignumber.js";
-import { BN } from "bn.js";
 import { zeroAddress } from "lib/utils";
-import { Address } from "ton";
+import { Address } from "@ton/core";
 
 export const scannerUrl = (isSandbox?: boolean, regularAddress?: boolean) => {
   if (isSandbox) {
@@ -23,7 +21,7 @@ export const getUrlParam = (name: string) => {
 export const isValidAddress = (address: string, errorText?: string) => {
   try {
     const result = Address.parse(address);
-    if (result && result.toFriendly() === zeroAddress().toFriendly()) {
+    if (result && result.toString() === zeroAddress().toString()) {
       return false;
     }
     return true;
@@ -32,14 +30,16 @@ export const isValidAddress = (address: string, errorText?: string) => {
   }
 };
 
-const ten = new BigNumber(10);
-
-export function toDecimalsBN(num: number | string, decimals: number | string) {
-  return new BN(BigNumber(num).multipliedBy(ten.pow(decimals)).toFixed(0));
+export function toDecimals(num: number | string, decimals: number | string): bigint {
+  const bigIntNum = BigInt(num);
+  const bigIntDecimals = 10n ** BigInt(decimals);
+  return bigIntNum * bigIntDecimals;
 }
 
-export function fromDecimals(num: number | string, decimals: number | string) {
-  return BigNumber(num).div(ten.pow(decimals)).toFixed();
+export function fromDecimals(num: bigint | number | string, decimals: number | string): string {
+  const bigIntNum = BigInt(num);
+  const bigIntDecimals = 10n ** BigInt(decimals);
+  return (bigIntNum / bigIntDecimals).toString();
 }
 
 export const onConnect = () => {

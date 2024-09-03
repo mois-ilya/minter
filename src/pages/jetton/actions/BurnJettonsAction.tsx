@@ -7,7 +7,7 @@ import { useState } from "react";
 import useJettonStore from "store/jetton-store/useJettonStore";
 import { AppButton } from "components/appButton";
 import { AppNumberInput } from "components/appInput";
-import { toDecimalsBN } from "utils";
+import { toDecimals } from "utils";
 import { useRecoilState } from "recoil";
 import { jettonActionsState } from "pages/jetton/actions/jettonActions";
 import { useTonAddress, useTonConnectUI } from "@tonconnect/ui-react";
@@ -42,10 +42,10 @@ function BurnJettonsAction() {
       return;
     }
 
-    const valueDecimals = toDecimalsBN(amount, decimals!);
-    const balanceDecimals = toDecimalsBN(balance!!.toString(), decimals!);
+    const valueDecimals = toDecimals(amount, decimals!);
+    const balanceDecimals = toDecimals(balance!!.toString(), decimals!);
 
-    if (valueDecimals.gt(balanceDecimals)) {
+    if (valueDecimals > balanceDecimals) {
       const msg = (
         <>
           Maximum amount to burn is <BigNumberDisplay value={balance} />
@@ -57,15 +57,17 @@ function BurnJettonsAction() {
 
     try {
       setActionInProgress(true);
-      await jettonDeployController.burnJettons(
-        tonconnect,
-        valueDecimals,
-        jettonWalletAddress!,
-        walletAddress,
-      );
-      const message = `Successfully burned ${amount.toLocaleString()} ${symbol}`;
-      showNotification(message, "success");
-      getJettonDetails();
+
+      throw new Error("Not implemented"); // TODO: Implement burnJettons
+      // await jettonDeployController.burnJettons(
+      //   tonconnect,
+      //   valueDecimals,
+      //   jettonWalletAddress!,
+      //   walletAddress,
+      // );
+      // const message = `Successfully burned ${amount.toLocaleString()} ${symbol}`;
+      // showNotification(message, "success");
+      // getJettonDetails();
     } catch (error) {
       if (error instanceof Error) {
         showNotification(error.message, "error");

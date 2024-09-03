@@ -4,7 +4,7 @@ import { isValidAddress } from "utils";
 import useNotification from "hooks/useNotification";
 import { ROUTES } from "consts";
 import { recoilPersist } from "recoil-persist";
-import { Address } from "ton";
+import { Address } from "@ton/core";
 import { useEffect } from "react";
 import { useJettonAddress } from "hooks/useJettonAddress";
 import { useNavigatePreserveQuery } from "lib/hooks/useNavigatePreserveQuery";
@@ -54,7 +54,7 @@ export function useAddressHistory() {
       return;
     }
 
-    const transformedAddress = Address.parse(address!).toFriendly();
+    const transformedAddress = Address.parse(address!).toString();
 
     addAddress(transformedAddress);
     setValue("");

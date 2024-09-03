@@ -1,18 +1,16 @@
-import BN from "bn.js";
-import { Cell, beginCell, Address, beginDict, Slice, toNano } from "ton";
+import { Cell, beginCell, Address, Slice, toNano, Dictionary } from "@ton/ton";
 
 import walletHex from "./contracts/jetton-wallet.compiled.json";
 import minterHex from "./contracts/jetton-minter.compiled.json";
-// @ts-ignore
 import { Sha256 } from "@aws-crypto/sha256-js";
-import axios from "axios";
+// import axios from "axios";
 
 const ONCHAIN_CONTENT_PREFIX = 0x00;
 const OFFCHAIN_CONTENT_PREFIX = 0x01;
 const SNAKE_PREFIX = 0x00;
 
-export const JETTON_WALLET_CODE = Cell.fromBoc(walletHex.hex)[0];
-export const JETTON_MINTER_CODE = Cell.fromBoc(minterHex.hex)[0]; // code cell from build output
+export const JETTON_WALLET_CODE = Cell.fromBoc(Buffer.from(walletHex.hex, "hex"))[0];
+export const JETTON_MINTER_CODE = Cell.fromBoc(Buffer.from(minterHex.hex, "hex"))[0]; // code cell from build output
 
 enum OPS {
   ChangeAdmin = 3,
@@ -50,37 +48,80 @@ const sha256 = (str: string) => {
   return Buffer.from(sha.digestSync());
 };
 
-export function buildJettonOnchainMetadata(data: { [s: string]: string | undefined }): Cell {
-  const KEYLEN = 256;
-  const dict = beginDict(KEYLEN);
+function bufferToChunksForSnakeCells(buff: Buffer) {
+  const FIRST_CELL_MAX_SIZE_BYTES = Math.floor((1023 - 8) / 8); // 126
+  const CELL_MAX_SIZE_BYTES = Math.floor(1023 / 8); // 127
+
+  if (buff.length <= CELL_MAX_SIZE_BYTES) {
+    return [buff];
+  }
+
+  const firstBuffer = buff.subarray(0, FIRST_CELL_MAX_SIZE_BYTES);
+  const restBuffer = bufferToChunks(buff.subarray(FIRST_CELL_MAX_SIZE_BYTES), CELL_MAX_SIZE_BYTES);
+
+  return [firstBuffer, ...restBuffer];
+}
+
+function bufferToChunks(buff: Buffer, chunkSize: number) {
+  const chunks: Buffer[] = [];
+  while (buff.byteLength > 0) {
+    chunks.push(buff.subarray(0, chunkSize));
+    buff = buff.subarray(chunkSize);
+  }
+  return chunks;
+}
+
+export function makeSnakeCell(data: Buffer): Cell {
+  const chunks = bufferToChunksForSnakeCells(data);
+
+  if (chunks.length === 0) {
+    return beginCell().endCell();
+  }
+
+  if (chunks.length === 1) {
+    return beginCell().storeBuffer(chunks[0]).endCell();
+  }
+
+  let curCell = beginCell().storeUint(SNAKE_PREFIX, 8);
+
+  for (let i = chunks.length - 1; i >= 0; i--) {
+    const chunk = chunks[i];
+
+    curCell.storeBuffer(chunk);
+
+    if (i - 1 >= 0) {
+      const nextCell = beginCell();
+      nextCell.storeRef(curCell);
+      curCell = nextCell;
+    }
+  }
+
+  return curCell.endCell();
+}
+
+export function buildJettonOnchainMetadata(data: {
+  [s in JettonMetaDataKeys]?: string | undefined;
+}): Cell {
+  const dict = Dictionary.empty<Buffer, Cell>();
 
   Object.entries(data).forEach(([k, v]: [string, string | undefined]) => {
-    if (!jettonOnChainMetadataSpec[k as JettonMetaDataKeys])
+    const key = k as JettonMetaDataKeys;
+    
+    if (!jettonOnChainMetadataSpec[key]) {
       throw new Error(`Unsupported onchain key: ${k}`);
-    if (v === undefined || v === "") return;
-
-    let bufferToStore = Buffer.from(v, jettonOnChainMetadataSpec[k as JettonMetaDataKeys]);
-
-    const CELL_MAX_SIZE_BYTES = Math.floor((1023 - 8) / 8);
-
-    const rootCell = new Cell();
-    rootCell.bits.writeUint8(SNAKE_PREFIX);
-    let currentCell = rootCell;
-
-    while (bufferToStore.length > 0) {
-      currentCell.bits.writeBuffer(bufferToStore.slice(0, CELL_MAX_SIZE_BYTES));
-      bufferToStore = bufferToStore.slice(CELL_MAX_SIZE_BYTES);
-      if (bufferToStore.length > 0) {
-        let newCell = new Cell();
-        currentCell.refs.push(newCell);
-        currentCell = newCell;
-      }
     }
 
-    dict.storeRef(sha256(k), rootCell);
+    if (v === undefined || v === "") return;
+
+    let bufferToStore = Buffer.from(v, jettonOnChainMetadataSpec[key]);
+
+    dict.set(sha256(k), makeSnakeCell(bufferToStore));
   });
 
-  return beginCell().storeInt(ONCHAIN_CONTENT_PREFIX, 8).storeDict(dict.endDict()).endCell();
+  return beginCell()
+    .storeInt(ONCHAIN_CONTENT_PREFIX, 8)
+    .storeDict(dict)
+    .endCell();
 }
 
 export function buildJettonOffChainMetadata(contentUri: string): Cell {
@@ -92,112 +133,112 @@ export function buildJettonOffChainMetadata(contentUri: string): Cell {
 
 export type PersistenceType = "onchain" | "offchain_private_domain" | "offchain_ipfs";
 
-export async function readJettonMetadata(contentCell: Cell): Promise<{
-  persistenceType: PersistenceType;
-  metadata: { [s in JettonMetaDataKeys]?: string };
-  isJettonDeployerFaultyOnChainData?: boolean;
-}> {
-  const contentSlice = contentCell.beginParse();
+// export async function readJettonMetadata(contentCell: Cell): Promise<{
+//   persistenceType: PersistenceType;
+//   metadata: { [s in JettonMetaDataKeys]?: string };
+//   isJettonDeployerFaultyOnChainData?: boolean;
+// }> {
+//   const contentSlice = contentCell.beginParse();
 
-  switch (contentSlice.readUint(8).toNumber()) {
-    case ONCHAIN_CONTENT_PREFIX: {
-      const res = parseJettonOnchainMetadata(contentSlice);
+//   switch (contentSlice.readUint(8).toNumber()) {
+//     case ONCHAIN_CONTENT_PREFIX: {
+//       const res = parseJettonOnchainMetadata(contentSlice);
 
-      let persistenceType: PersistenceType = "onchain";
+//       let persistenceType: PersistenceType = "onchain";
 
-      if (res.metadata.uri) {
-        const offchainMetadata = await getJettonMetadataFromExternalUri(res.metadata.uri);
-        persistenceType = offchainMetadata.isIpfs ? "offchain_ipfs" : "offchain_private_domain";
-        res.metadata = {
-          ...res.metadata,
-          ...offchainMetadata.metadata,
-        };
-      }
+//       if (res.metadata.uri) {
+//         const offchainMetadata = await getJettonMetadataFromExternalUri(res.metadata.uri);
+//         persistenceType = offchainMetadata.isIpfs ? "offchain_ipfs" : "offchain_private_domain";
+//         res.metadata = {
+//           ...res.metadata,
+//           ...offchainMetadata.metadata,
+//         };
+//       }
 
-      return {
-        persistenceType: persistenceType,
-        ...res,
-      };
-    }
-    case OFFCHAIN_CONTENT_PREFIX: {
-      const { metadata, isIpfs } = await parseJettonOffchainMetadata(contentSlice);
-      return {
-        persistenceType: isIpfs ? "offchain_ipfs" : "offchain_private_domain",
-        metadata,
-      };
-    }
-    default:
-      throw new Error("Unexpected jetton metadata content prefix");
-  }
-}
+//       return {
+//         persistenceType: persistenceType,
+//         ...res,
+//       };
+//     }
+//     case OFFCHAIN_CONTENT_PREFIX: {
+//       const { metadata, isIpfs } = await parseJettonOffchainMetadata(contentSlice);
+//       return {
+//         persistenceType: isIpfs ? "offchain_ipfs" : "offchain_private_domain",
+//         metadata,
+//       };
+//     }
+//     default:
+//       throw new Error("Unexpected jetton metadata content prefix");
+//   }
+// }
 
-async function parseJettonOffchainMetadata(contentSlice: Slice): Promise<{
-  metadata: { [s in JettonMetaDataKeys]?: string };
-  isIpfs: boolean;
-}> {
-  return getJettonMetadataFromExternalUri(contentSlice.readRemainingBytes().toString("ascii"));
-}
+// async function parseJettonOffchainMetadata(contentSlice: Slice): Promise<{
+//   metadata: { [s in JettonMetaDataKeys]?: string };
+//   isIpfs: boolean;
+// }> {
+//   return getJettonMetadataFromExternalUri(contentSlice.readRemainingBytes().toString("ascii"));
+// }
 
-async function getJettonMetadataFromExternalUri(uri: string) {
-  const jsonURI = uri.replace("ipfs://", "https://ipfs.io/ipfs/");
+// async function getJettonMetadataFromExternalUri(uri: string) {
+//   const jsonURI = uri.replace("ipfs://", "https://ipfs.io/ipfs/");
 
-  return {
-    metadata: (await axios.get(jsonURI)).data,
-    isIpfs: /(^|\/)ipfs[.:]/.test(jsonURI),
-  };
-}
+//   return {
+//     metadata: (await axios.get(jsonURI)).data,
+//     isIpfs: /(^|\/)ipfs[.:]/.test(jsonURI),
+//   };
+// }
 
-function parseJettonOnchainMetadata(contentSlice: Slice): {
-  metadata: { [s in JettonMetaDataKeys]?: string };
-  isJettonDeployerFaultyOnChainData: boolean;
-} {
-  // Note that this relies on what is (perhaps) an internal implementation detail:
-  // "ton" library dict parser converts: key (provided as buffer) => BN(base10)
-  // and upon parsing, it reads it back to a BN(base10)
-  // tl;dr if we want to read the map back to a JSON with string keys, we have to convert BN(10) back to hex
-  const toKey = (str: string) => new BN(str, "hex").toString(10);
-  const KEYLEN = 256;
+// function parseJettonOnchainMetadata(contentSlice: Slice): {
+//   metadata: { [s in JettonMetaDataKeys]?: string };
+//   isJettonDeployerFaultyOnChainData: boolean;
+// } {
+//   // Note that this relies on what is (perhaps) an internal implementation detail:
+//   // "ton" library dict parser converts: key (provided as buffer) => BN(base10)
+//   // and upon parsing, it reads it back to a BN(base10)
+//   // tl;dr if we want to read the map back to a JSON with string keys, we have to convert BN(10) back to hex
+//   const toKey = (str: string) => BigInt(`0x${str}`).toString(10);
+//   const KEYLEN = 256;
 
-  let isJettonDeployerFaultyOnChainData = false;
+//   let isJettonDeployerFaultyOnChainData = false;
 
-  const dict = contentSlice.readDict(KEYLEN, (s) => {
-    let buffer = Buffer.from("");
+//   const dict = contentSlice.readDict(KEYLEN, (s) => {
+//     let buffer = Buffer.from("");
 
-    const sliceToVal = (s: Slice, v: Buffer, isFirst: boolean) => {
-      s.toCell().beginParse();
-      if (isFirst && s.readUint(8).toNumber() !== SNAKE_PREFIX)
-        throw new Error("Only snake format is supported");
+//     const sliceToVal = (s: Slice, v: Buffer, isFirst: boolean) => {
+//       s.toCell().beginParse();
+//       if (isFirst && s.readUint(8).toNumber() !== SNAKE_PREFIX)
+//         throw new Error("Only snake format is supported");
 
-      v = Buffer.concat([v, s.readRemainingBytes()]);
-      if (s.remainingRefs === 1) {
-        v = sliceToVal(s.readRef(), v, false);
-      }
+//       v = Buffer.concat([v, s.readRemainingBytes()]);
+//       if (s.remainingRefs === 1) {
+//         v = sliceToVal(s.readRef(), v, false);
+//       }
 
-      return v;
-    };
+//       return v;
+//     };
 
-    if (s.remainingRefs === 0) {
-      isJettonDeployerFaultyOnChainData = true;
-      return sliceToVal(s, buffer, true);
-    }
+//     if (s.remainingRefs === 0) {
+//       isJettonDeployerFaultyOnChainData = true;
+//       return sliceToVal(s, buffer, true);
+//     }
 
-    return sliceToVal(s.readRef(), buffer, true);
-  });
+//     return sliceToVal(s.readRef(), buffer, true);
+//   });
 
-  const res: { [s in JettonMetaDataKeys]?: string } = {};
+//   const res: { [s in JettonMetaDataKeys]?: string } = {};
 
-  Object.keys(jettonOnChainMetadataSpec).forEach((k) => {
-    const val = dict
-      .get(toKey(sha256(k).toString("hex")))
-      ?.toString(jettonOnChainMetadataSpec[k as JettonMetaDataKeys]);
-    if (val) res[k as JettonMetaDataKeys] = val;
-  });
+//   Object.keys(jettonOnChainMetadataSpec).forEach((k) => {
+//     const val = dict
+//       .get(toKey(sha256(k).toString("hex")))
+//       ?.toString(jettonOnChainMetadataSpec[k as JettonMetaDataKeys]);
+//     if (val) res[k as JettonMetaDataKeys] = val;
+//   });
 
-  return {
-    metadata: res,
-    isJettonDeployerFaultyOnChainData,
-  };
-}
+//   return {
+//     metadata: res,
+//     isJettonDeployerFaultyOnChainData,
+//   };
+// }
 
 export function initData(
   owner: Address,
@@ -207,20 +248,23 @@ export function initData(
   if (!data && !offchainUri) {
     throw new Error("Must either specify onchain data or offchain uri");
   }
+
+  const metadata = offchainUri
+    ? buildJettonOffChainMetadata(offchainUri)
+    : buildJettonOnchainMetadata(data!);
+
   return beginCell()
     .storeCoins(0)
     .storeAddress(owner)
-    .storeRef(
-      offchainUri ? buildJettonOffChainMetadata(offchainUri) : buildJettonOnchainMetadata(data!),
-    )
+    .storeRef(metadata)
     .storeRef(JETTON_WALLET_CODE)
     .endCell();
 }
 
 export function mintBody(
   owner: Address,
-  jettonValue: BN,
-  transferToJWallet: BN,
+  jettonValue: bigint,
+  transferToJWallet: bigint,
   queryId: number,
 ): Cell {
   return beginCell()
@@ -243,7 +287,7 @@ export function mintBody(
     .endCell();
 }
 
-export function burn(amount: BN, responseAddress: Address) {
+export function burn(amount: bigint, responseAddress: Address) {
   return beginCell()
     .storeUint(OPS.Burn, 32) // action
     .storeUint(1, 64) // query-id
@@ -253,7 +297,7 @@ export function burn(amount: BN, responseAddress: Address) {
     .endCell();
 }
 
-export function transfer(to: Address, from: Address, jettonAmount: BN) {
+export function transfer(to: Address, from: Address, jettonAmount: bigint) {
   return beginCell()
     .storeUint(OPS.Transfer, 32)
     .storeUint(1, 64)

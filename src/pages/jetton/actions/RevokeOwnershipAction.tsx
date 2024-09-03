@@ -2,7 +2,7 @@ import useNotification from "hooks/useNotification";
 import { jettonDeployController } from "lib/deploy-controller";
 import WalletConnection from "services/wallet-connection";
 import useJettonStore from "store/jetton-store/useJettonStore";
-import { Address } from "ton";
+import { Address } from "@ton/core";
 import { AppButton } from "components/appButton";
 import { useSetRecoilState } from "recoil";
 import { jettonActionsState } from "pages/jetton/actions/jettonActions";
@@ -38,13 +38,17 @@ function RevokeOwnershipAction() {
         return;
       }
       setActionInProgress(true);
-      await jettonDeployController.burnAdmin(
-        Address.parse(jettonMaster),
-        tonconnect,
-        walletAddress,
-      );
-      getJettonDetails();
-      showNotification("Ownership revoked successfully", "success");
+
+      throw new Error("Not implemented");
+
+      // TODO: Implement burnJettons
+      // await jettonDeployController.burnAdmin(
+      //   Address.parse(jettonMaster),
+      //   tonconnect,
+      //   walletAddress,
+      // );
+      // getJettonDetails();
+      // showNotification("Ownership revoked successfully", "success");
     } catch (error) {
       if (error instanceof Error) {
         showNotification(error.message, "error");

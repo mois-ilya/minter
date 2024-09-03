@@ -3,7 +3,6 @@ import BurnJettonsAction from "./actions/BurnJettonsAction";
 import MintJettonsAction from "./actions/MintJettonsAction";
 import RevokeOwnershipAction from "./actions/RevokeOwnershipAction";
 import { JettonDetailMessage } from "./types";
-export { BigNumber } from "bignumber.js";
 
 const commonGithubUrl =
   "https://github.com/ton-blockchain/minter-contract#protect-yourself-and-your-users";

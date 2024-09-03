@@ -150,7 +150,7 @@ export const Token = () => {
             <DataRow
               title="Total Supply"
               value={
-                totalSupply && (
+                totalSupply !== undefined ? (
                   <>
                     <BigNumberDisplay
                       value={totalSupply.toString()}
@@ -158,7 +158,7 @@ export const Token = () => {
                     />{" "}
                     {symbol}
                   </>
-                )
+                ) : undefined
               }
               dataLoading={jettonLoading}
               message={getTotalSupplyWarning(persistenceType, adminRevokedOwnership)}

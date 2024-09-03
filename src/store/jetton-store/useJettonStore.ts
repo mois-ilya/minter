@@ -6,7 +6,7 @@ import { jettonDeployController } from "lib/deploy-controller";
 import { zeroAddress } from "lib/utils";
 import { useCallback } from "react";
 import { useRecoilState, useResetRecoilState } from "recoil";
-import { Address } from "ton";
+import { Address } from "@ton/core";
 import { getUrlParam, isValidAddress } from "utils";
 import { jettonStateAtom } from ".";
 
@@ -50,73 +50,76 @@ function useJettonStore() {
         jettonLoading: true,
       }));
 
-      const result = await jettonDeployController.getJettonDetails(
-        parsedJettonMaster,
-        address ? Address.parse(address) : zeroAddress(),
-      );
+      throw new Error("Not implemented");
 
-      if (!result) {
-        console.log("empty");
+      // TODO: Implement getJettonDetails
+      // const result = await jettonDeployController.getJettonDetails(
+      //   parsedJettonMaster,
+      //   address ? Address.parse(address) : zeroAddress(),
+      // );
 
-        return;
-      }
-      const _adminAddress = result.minter.admin?.toFriendly() ?? zeroAddress().toFriendly();
-      const admin = isMyWallet && _adminAddress === connectedWalletAddress;
+      // if (!result) {
+      //   console.log("empty");
 
-      let image: string | undefined;
+      //   return;
+      // }
+      // const _adminAddress = result.minter.admin?.toString() ?? zeroAddress().toString();
+      // const admin = isMyWallet && _adminAddress === connectedWalletAddress;
 
-      if (result.minter.metadata.image) {
-        const img = new Image();
-        img.src = result.minter.metadata.image;
-        img.onerror = () => {
-          setState((prev) => ({ ...prev, isImageBroken: true }));
-        };
+      // let image: string | undefined;
 
-        image = result.minter.metadata.image;
-      } else if (result.minter.metadata.image_data) {
-        try {
-          const imgData = Buffer.from(result.minter.metadata.image_data, "base64").toString();
-          let type: string;
+      // if (result.minter.metadata.image) {
+      //   const img = new Image();
+      //   img.src = result.minter.metadata.image;
+      //   img.onerror = () => {
+      //     setState((prev) => ({ ...prev, isImageBroken: true }));
+      //   };
 
-          if (/<svg xmlns/.test(imgData)) {
-            type = "svg+xml";
-          } else if (/png/i.test(imgData)) {
-            type = "png";
-          } else {
-            console.warn("Defaulting to jpeg");
-            type = "jpeg"; // Fallback
-          }
+      //   image = result.minter.metadata.image;
+      // } else if (result.minter.metadata.image_data) {
+      //   try {
+      //     const imgData = Buffer.from(result.minter.metadata.image_data, "base64").toString();
+      //     let type: string;
 
-          image = `data:image/${type};base64,${result.minter.metadata.image_data}`;
-        } catch (e) {
-          console.error("Error parsing img metadata");
-        }
-      }
+      //     if (/<svg xmlns/.test(imgData)) {
+      //       type = "svg+xml";
+      //     } else if (/png/i.test(imgData)) {
+      //       type = "png";
+      //     } else {
+      //       console.warn("Defaulting to jpeg");
+      //       type = "jpeg"; // Fallback
+      //     }
 
-      if (myIndex !== i) {
-        return;
-      }
-      setState((prevState) => {
-        return {
-          ...prevState,
-          isJettonDeployerFaultyOnChainData: result.minter.isJettonDeployerFaultyOnChainData,
-          persistenceType: result.minter.persistenceType,
-          description: result.minter.metadata.description,
-          jettonImage: image ?? QuestiomMarkImg,
-          totalSupply: result.minter.totalSupply,
-          name: result.minter.metadata.name,
-          symbol: result.minter.metadata.symbol,
-          adminRevokedOwnership: _adminAddress === zeroAddress().toFriendly(),
-          isAdmin: admin,
-          decimals: result.minter.metadata.decimals || "9",
-          adminAddress: _adminAddress,
-          balance: result.jettonWallet ? result.jettonWallet.balance : undefined,
-          jettonWalletAddress: result.jettonWallet?.jWalletAddress?.toFriendly(),
-          jettonMaster: jettonAddress,
-          isMyWallet,
-          selectedWalletAddress: address,
-        };
-      });
+      //     image = `data:image/${type};base64,${result.minter.metadata.image_data}`;
+      //   } catch (e) {
+      //     console.error("Error parsing img metadata");
+      //   }
+      // }
+
+      // if (myIndex !== i) {
+      //   return;
+      // }
+      // setState((prevState) => {
+      //   return {
+      //     ...prevState,
+      //     isJettonDeployerFaultyOnChainData: result.minter.isJettonDeployerFaultyOnChainData,
+      //     persistenceType: result.minter.persistenceType,
+      //     description: result.minter.metadata.description,
+      //     jettonImage: image ?? QuestiomMarkImg,
+      //     totalSupply: result.minter.totalSupply,
+      //     name: result.minter.metadata.name,
+      //     symbol: result.minter.metadata.symbol,
+      //     adminRevokedOwnership: _adminAddress === zeroAddress().toString(),
+      //     isAdmin: admin,
+      //     decimals: result.minter.metadata.decimals || "9",
+      //     adminAddress: _adminAddress,
+      //     balance: result.jettonWallet ? result.jettonWallet.balance : undefined,
+      //     jettonWalletAddress: result.jettonWallet?.jWalletAddress?.toString(),
+      //     jettonMaster: jettonAddress,
+      //     isMyWallet,
+      //     selectedWalletAddress: address,
+      //   };
+      // });
     } catch (error) {
       if (error instanceof Error) {
         console.error(error);

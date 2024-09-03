@@ -1,4 +1,4 @@
-import { TonClient } from "ton";
+import { TonClient } from "@ton/ton";
 import { getHttpEndpoint } from "@orbs-network/ton-access";
 import { getNetwork } from "./hooks/useNetwork";
 
