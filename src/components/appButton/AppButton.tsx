@@ -11,7 +11,7 @@ interface StyledButtonProps {
   height?: number;
 }
 
-const StyledButton = styled(LoadingButton)((props: StyledButtonProps) => ({
+const StyledButton = styled(LoadingButton)<StyledButtonProps>((props) => ({
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
@@ -25,7 +25,7 @@ const StyledButton = styled(LoadingButton)((props: StyledButtonProps) => ({
   boxShadow: "none",
   fontWeight: props.fontWeight || 600,
   borderRadius: 40,
-  border: props.transparent ? "1px solid #50A7EA" : "",
+  border: props.variant === "outlined" ? "1px solid #50A7EA" : "",
   background: props.background || "",
   whiteSpace: "nowrap",
   "& img": {
@@ -63,7 +63,6 @@ export const AppButton: React.FC<AppButtonProps> = ({
       height={height}
       fontSize={fontSize}
       fontWeight={fontWeight}
-      transparent={transparent}
       background={background}
       className={children !== "Update metadata" ? "base-button" : ""}
       type={type}

@@ -174,7 +174,17 @@ function Description() {
         </Link>
         . This free educational tool allows you to deploy your own Jetton to mainnet in one click.
         You will need at least 0.25 TON for deployment fees. <br />
-        <Spacer />
+      </Typography>
+      <Spacer />
+      <Typography
+        sx={{
+          fontWeight: 400,
+          color: "#728A96",
+          "& a": {
+            textDecoration: "none",
+            fontWeight: 500,
+          },
+        }}>
         For detailed instructions and in-depth explanations of all fields please see the{" "}
         <Link
           target="_blank"
@@ -182,7 +192,17 @@ function Description() {
           GitHub README
         </Link>
         . It includes several best practice recommendations so please take a look.
-        <Spacer />
+      </Typography>
+      <Spacer />
+      <Typography
+        sx={{
+          fontWeight: 400,
+          color: "#728A96",
+          "& a": {
+            textDecoration: "none",
+            fontWeight: 500,
+          },
+        }}>
         Never deploy code that you've never seen before! This deployer is fully open source with all
         smart contract code{" "}
         <Link target="_blank" href="https://github.com/ton-blockchain/minter-contract">
@@ -196,7 +216,17 @@ function Description() {
         <Link target="_blank" href="https://github.com/ton-blockchain/minter">
           GitHub Pages
         </Link>
-        . <Spacer />
+      </Typography>
+      . <Spacer />
+      <Typography
+        sx={{
+          fontWeight: 400,
+          color: "#728A96",
+          "& a": {
+            textDecoration: "none",
+            fontWeight: 500,
+          },
+        }}>
         Is this deployer safe? Yes! Read{" "}
         <Link
           target="_blank"

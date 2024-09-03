@@ -7,7 +7,9 @@ interface IconProps {
   disabled?: boolean;
 }
 
-const Icon = styled(Box)((props: IconProps) => ({ theme }) => ({
+const Icon = styled(Box, {
+  shouldForwardProp: (prop) => prop in ["iconUrl", "hoveredIconUrl"],
+})((props: IconProps) => ({ theme }) => ({
   display: "flex",
   alignItems: "center",
   justifyContent: "center",

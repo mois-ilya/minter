@@ -48,12 +48,16 @@ export const Footer = () => {
           <Typography variant="body2">© 2023 TON Foundation</Typography>
         </FooterTextBoxLeft>
         <ContributedWrapper>
-          <Typography variant="body2" sx={{ display: "flex", alignItems: "center" }}>
-            Contributed with
+          <Box display="flex" alignItems="center">
+            <Typography variant="body2" sx={{ display: "flex", alignItems: "center" }}>
+              Contributed with
+            </Typography>
             <CenteringWrapper mx={0.4}>
               <img src={heart} alt="Orbs logo" width={12} height={12} />
             </CenteringWrapper>
-            by
+            <Typography variant="body2" sx={{ display: "flex", alignItems: "center" }}>
+              by
+            </Typography>
             <CenteringWrapper mx={0.4}>
               <img src={orbsLogo} alt="Orbs logo" width={12} height={12} />
             </CenteringWrapper>
@@ -63,7 +67,7 @@ export const Footer = () => {
               href="https://orbs.com/">
               Orbs
             </FooterLink>
-          </Typography>
+          </Box>
         </ContributedWrapper>
         <FooterTextBoxRight>
           <FooterLink target="_blank" href="https://t.me/+YDnoBue1Dz81ZTMy">
