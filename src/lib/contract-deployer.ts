@@ -33,7 +33,7 @@ export class ContractDeployer {
     storeStateInit(stateInit)(stateInitBuilder);
     const cell = stateInitBuilder.endCell();
 
-    console.log("Cell hash", cell.hash().toString("base64"));
+    console.log("Cell", cell.hash().toString("base64"));
     console.log("Cell gIleIfiSXOBjrReiC5uAvOJuskqTlCaYZBaXo4/df84=");
 
     // throw new Error("stop");

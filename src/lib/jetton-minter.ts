@@ -1,4 +1,4 @@
-import { Cell, beginCell, Address, Slice, toNano, Dictionary } from "@ton/ton";
+import { Cell, beginCell, Address, toNano, Dictionary } from "@ton/core";
 
 import walletHex from "./contracts/jetton-wallet.compiled.json";
 import minterHex from "./contracts/jetton-minter.compiled.json";
@@ -57,7 +57,10 @@ function bufferToChunksForSnakeCells(buff: Buffer) {
   }
 
   const firstBuffer = buff.subarray(0, FIRST_CELL_MAX_SIZE_BYTES);
-  const restBuffer = bufferToChunks(buff.subarray(FIRST_CELL_MAX_SIZE_BYTES), CELL_MAX_SIZE_BYTES);
+  const restBuffer = bufferToChunks(
+    buff.subarray(FIRST_CELL_MAX_SIZE_BYTES),
+    FIRST_CELL_MAX_SIZE_BYTES,
+  );
 
   return [firstBuffer, ...restBuffer];
 }
@@ -102,11 +105,11 @@ export function makeSnakeCell(data: Buffer): Cell {
 export function buildJettonOnchainMetadata(data: {
   [s in JettonMetaDataKeys]?: string | undefined;
 }): Cell {
-  const dict = Dictionary.empty<Buffer, Cell>();
+  const dict = Dictionary.empty(Dictionary.Keys.BigUint(256), Dictionary.Values.Cell());
 
   Object.entries(data).forEach(([k, v]: [string, string | undefined]) => {
     const key = k as JettonMetaDataKeys;
-    
+
     if (!jettonOnChainMetadataSpec[key]) {
       throw new Error(`Unsupported onchain key: ${k}`);
     }
@@ -115,13 +118,10 @@ export function buildJettonOnchainMetadata(data: {
 
     let bufferToStore = Buffer.from(v, jettonOnChainMetadataSpec[key]);
 
-    dict.set(sha256(k), makeSnakeCell(bufferToStore));
+    dict.set(BigInt("0x" + sha256(k).toString("hex")), makeSnakeCell(bufferToStore));
   });
 
-  return beginCell()
-    .storeInt(ONCHAIN_CONTENT_PREFIX, 8)
-    .storeDict(dict)
-    .endCell();
+  return beginCell().storeInt(ONCHAIN_CONTENT_PREFIX, 8).storeDict(dict).endCell();
 }
 
 export function buildJettonOffChainMetadata(contentUri: string): Cell {

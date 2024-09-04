@@ -11,7 +11,7 @@ import {
   updateMetadataBody,
 } from "./jetton-minter";
 import { changeAdminBody, JettonMetaDataKeys } from "./jetton-minter";
-import { getClient } from "./get-ton-client";
+import { getClient, getEndpoint } from "./get-ton-client";
 import { cellToAddress, makeGetCall } from "./make-get-call";
 import { SendTransactionRequest, TonConnectUI } from "@tonconnect/ui-react";
 
@@ -51,9 +51,11 @@ class JettonDeployController {
     const contractDeployer = new ContractDeployer();
     const tc = await getClient();
 
+    console.log("Deploying jetton");
     // params.onProgress?.(JettonDeployState.BALANCE_CHECK);
     const balance = await tc.getBalance(params.owner);
 
+    console.log("Deploying jetton 1", balance);
     if (balance < JETTON_DEPLOY_GAS) throw new Error("Not enough balance in deployer wallet");
 
     const deployParams = createDeployParams(params, params.offchainUri);
