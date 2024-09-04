@@ -66,7 +66,7 @@ function DeployerPage() {
         decimals: parseInt(decimals).toFixed(0),
       },
       offchainUri: data.offchainUri,
-      amountToMint: BigInt(data.mintAmount) * BigInt(decimals ?? DEFAULT_DECIMALS),
+      amountToMint: toDecimals(data.mintAmount, decimals ?? DEFAULT_DECIMALS),
     };
     setIsLoading(true);
     const deployParams = createDeployParams(params, data.offchainUri);
