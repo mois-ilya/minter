@@ -51,11 +51,9 @@ class JettonDeployController {
     const contractDeployer = new ContractDeployer();
     const tc = await getClient();
 
-    console.log("Deploying jetton");
     // params.onProgress?.(JettonDeployState.BALANCE_CHECK);
     const balance = await tc.getBalance(params.owner);
 
-    console.log("Deploying jetton 1", balance);
     if (balance < JETTON_DEPLOY_GAS) throw new Error("Not enough balance in deployer wallet");
 
     const deployParams = createDeployParams(params, params.offchainUri);

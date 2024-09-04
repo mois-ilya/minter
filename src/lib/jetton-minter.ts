@@ -48,23 +48,6 @@ const sha256 = (str: string) => {
   return Buffer.from(sha.digestSync());
 };
 
-function bufferToChunksForSnakeCells(buff: Buffer) {
-  const FIRST_CELL_MAX_SIZE_BYTES = Math.floor((1023 - 8) / 8); // 126
-  const CELL_MAX_SIZE_BYTES = Math.floor(1023 / 8); // 127
-
-  if (buff.length <= CELL_MAX_SIZE_BYTES) {
-    return [buff];
-  }
-
-  const firstBuffer = buff.subarray(0, FIRST_CELL_MAX_SIZE_BYTES);
-  const restBuffer = bufferToChunks(
-    buff.subarray(FIRST_CELL_MAX_SIZE_BYTES),
-    FIRST_CELL_MAX_SIZE_BYTES,
-  );
-
-  return [firstBuffer, ...restBuffer];
-}
-
 function bufferToChunks(buff: Buffer, chunkSize: number) {
   const chunks: Buffer[] = [];
   while (buff.byteLength > 0) {
@@ -75,15 +58,8 @@ function bufferToChunks(buff: Buffer, chunkSize: number) {
 }
 
 export function makeSnakeCell(data: Buffer): Cell {
-  const chunks = bufferToChunksForSnakeCells(data);
-
-  if (chunks.length === 0) {
-    return beginCell().endCell();
-  }
-
-  if (chunks.length === 1) {
-    return beginCell().storeBuffer(chunks[0]).endCell();
-  }
+  const SNAKE_CELL_MAX_SIZE_BYTES = Math.floor((1023 - 8) / 8); // 126
+  const chunks = bufferToChunks(data, SNAKE_CELL_MAX_SIZE_BYTES);
 
   let curCell = beginCell().storeUint(SNAKE_PREFIX, 8);
 
