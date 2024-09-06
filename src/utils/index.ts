@@ -37,9 +37,15 @@ export function toDecimals(num: number | string, decimals: number | string): big
 }
 
 export function fromDecimals(num: bigint | number | string, decimals: number | string): string {
-  const bigIntNum = BigInt(num);
-  const bigIntDecimals = 10n ** BigInt(decimals);
-  return (bigIntNum / bigIntDecimals).toString();
+  const dec = Number(decimals);
+  const strNum = BigInt(num)
+    .toString()
+    .padStart(dec + 1, "0");
+
+  const intPart = strNum.slice(0, -dec);
+  const fracPart = strNum.slice(-dec).replace(/0+$/, "");
+
+  return `${intPart}.${fracPart}`;
 }
 
 export const onConnect = () => {
