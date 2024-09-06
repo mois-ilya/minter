@@ -70,25 +70,25 @@ function bufferToChunks(buff: Buffer, chunkSize: number) {
 export function makeSnakeCell(data: Buffer): Cell {
   const chunks = bufferToChunks(data, SNAKE_CELL_MAX_SIZE_BYTES);
 
-  let curCell = beginCell().storeUint(SNAKE_PREFIX, 8);
+  const [firstChunk, ...tailChunks] = chunks;
 
-  for (let i = chunks.length - 1; i >= 0; i--) {
-    const chunk = chunks[i];
+  const secondChunk = tailChunks[0];
+  const tailBuilder =
+    tailChunks.length !== 0 &&
+    tailChunks.toReversed().reduce((prevBuilder, chunk) => {
+      prevBuilder.storeBuffer(chunk);
+      return secondChunk === chunk ? prevBuilder : beginCell().storeRef(prevBuilder);
+    }, beginCell());
 
-    curCell.storeBuffer(chunk);
+  const rootBuilder = beginCell().storeUint(SNAKE_PREFIX, 8);
+  firstChunk && rootBuilder.storeBuffer(firstChunk);
+  tailBuilder && rootBuilder.storeRef(tailBuilder);
 
-    if (i - 1 >= 0) {
-      const nextCell = beginCell();
-      nextCell.storeRef(curCell);
-      curCell = nextCell;
-    }
-  }
-
-  return curCell.endCell();
+  return rootBuilder.endCell();
 }
 
 export function flattenSnakeCell(cell: Cell): Buffer {
-  const sliceToBuffer = (c: Cell, v: BitBuilder, isFirst: boolean): BitBuilder => {
+  const sliceToBuffer = (c: Cell, v: Buffer, isFirst: boolean): Buffer => {
     const s = c.beginParse();
 
     if (isFirst && s.loadUint(8) !== SNAKE_PREFIX)
@@ -96,21 +96,18 @@ export function flattenSnakeCell(cell: Cell): Buffer {
 
     if (s.remainingBits === 0) return v;
 
-    const data = s.loadBits(s.remainingBits);
-    v.writeBits(data);
+    const data = s.loadBuffer(s.remainingBits / 8);
+    v = Buffer.concat([v, data]);
 
-    const newC = c.refs && c.refs[0];
+    const newCell = s.remainingRefs > 0 ? s.loadRef() : null;
+    s.endParse();
 
-    const newv = newC ? sliceToBuffer(newC, v, false) : v;
-
-    return newv;
+    return newCell ? sliceToBuffer(newCell, v, false) : v;
   };
 
-  const bitBuilder = sliceToBuffer(cell, new BitBuilder(), true);
-  const endBits = bitBuilder.build();
-  const reader = new BitReader(endBits);
+  const buffer = sliceToBuffer(cell, Buffer.from(""), true);
 
-  return reader.loadBuffer(reader.remaining / 8);
+  return buffer;
 }
 
 function toDictKey(key: string): bigint {
@@ -136,7 +133,7 @@ export function buildJettonOnchainMetadata(data: {
     dict.set(toDictKey(k), makeSnakeCell(bufferToStore));
   });
 
-  return beginCell().storeInt(ONCHAIN_CONTENT_PREFIX, 8).storeDict(dict).endCell();
+  return beginCell().storeUint(ONCHAIN_CONTENT_PREFIX, 8).storeDict(dict).endCell();
 }
 
 export function buildJettonOffChainMetadata(contentUri: string): Cell {
