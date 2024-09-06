@@ -7,6 +7,7 @@ import {
   buildJettonOnchainMetadata,
   burn,
   mintBody,
+  readJettonMetadata,
   transfer,
   updateMetadataBody,
 } from "./jetton-minter";
@@ -50,8 +51,6 @@ class JettonDeployController {
   ): Promise<Address> {
     const contractDeployer = new ContractDeployer();
     const tc = await getClient();
-
-    // params.onProgress?.(JettonDeployState.BALANCE_CHECK);
     const balance = await tc.getBalance(params.owner);
 
     if (balance < JETTON_DEPLOY_GAS) throw new Error("Not enough balance in deployer wallet");
@@ -59,28 +58,23 @@ class JettonDeployController {
     const deployParams = createDeployParams(params, params.offchainUri);
     const contractAddr = contractDeployer.addressForContract(deployParams);
 
-    if (await tc.isContractDeployed(contractAddr)) {
-      // params.onProgress?.(JettonDeployState.ALREADY_DEPLOYED);
-    } else {
+    const isDeployed = await tc.isContractDeployed(contractAddr);
+    if (!isDeployed) {
       await contractDeployer.deployContract(deployParams, tonConnection);
-      // params.onProgress?.(JettonDeployState.AWAITING_MINTER_DEPLOY);
       await waitForContractDeploy(contractAddr, tc);
     }
 
     const cellForOwner = beginCell().storeAddress(params.owner).endCell();
 
-    const ownerJWalletAddr = await makeGetCall(contractAddr, cellForOwner, tc);
+    const ownerJWalletAddr = await makeGetCall(
+      contractAddr,
+      "get_wallet_address",
+      cellForOwner,
+      tc,
+    ).then((v) => v.readAddress());
 
-    // params.onProgress?.(JettonDeployState.AWAITING_JWALLET_DEPLOY);
     await waitForContractDeploy(ownerJWalletAddr, tc);
 
-    // params.onProgress?.(
-    //   JettonDeployState.VERIFY_MINT,
-    //   undefined,
-    //   contractAddr.toFriendly()
-    // ); // TODO better way of emitting the contract?
-
-    // params.onProgress?.(JettonDeployState.DONE);
     return contractAddr;
   }
 
@@ -207,52 +201,52 @@ class JettonDeployController {
   //   await waiter();
   // }
 
-  // async getJettonDetails(contractAddr: Address, owner: Address) {
-  //   const tc = await getClient();
-  //   const minter = await makeGetCall(
-  //     contractAddr,
-  //     "get_jetton_data",
-  //     [],
-  //     async ([totalSupply, __, adminCell, contentCell]) => ({
-  //       ...(await readJettonMetadata(contentCell as unknown as Cell)),
-  //       admin: cellToAddress(adminCell),
-  //       totalSupply: totalSupply as BN,
-  //     }),
-  //     tc,
-  //   );
+  async getJettonDetails(contractAddr: Address, owner: Address) {
+    const tc = await getClient();
 
-  //   const jWalletAddress = await makeGetCall(
-  //     contractAddr,
-  //     "get_wallet_address",
-  //     [beginCell().storeAddress(owner).endCell()],
-  //     ([addressCell]) => cellToAddress(addressCell),
-  //     tc,
-  //   );
+    const minter = await makeGetCall(contractAddr, "get_jetton_data", null, tc).then(
+      async (reader) => {
+        const totalSupply = reader.readBigNumber();
+        reader.readBigNumber();
+        const admin = reader.readAddress();
+        const contentCell = await readJettonMetadata(reader.readCell());
 
-  //   const isDeployed = await tc.isContractDeployed(jWalletAddress);
+        return {
+          ...contentCell,
+          totalSupply,
+          admin,
+        };
+      },
+    );
 
-  //   let jettonWallet;
-  //   if (isDeployed) {
-  //     jettonWallet = await makeGetCall(
-  //       jWalletAddress,
-  //       "get_wallet_data",
-  //       [],
-  //       ([amount, _, jettonMasterAddressCell]) => ({
-  //         balance: amount as unknown as BN,
-  //         jWalletAddress,
-  //         jettonMasterAddress: cellToAddress(jettonMasterAddressCell),
-  //       }),
-  //       tc,
-  //     );
-  //   } else {
-  //     jettonWallet = null;
-  //   }
+    const jWalletAddress = await makeGetCall(
+      contractAddr,
+      "get_wallet_address",
+      beginCell().storeAddress(owner).endCell(),
+      tc,
+    ).then((reader) => reader.readAddress());
 
-  //   return {
-  //     minter,
-  //     jettonWallet,
-  //   };
-  // }
+    const isDeployed = await tc.isContractDeployed(jWalletAddress);
+
+    const jettonWallet = isDeployed
+      ? await makeGetCall(jWalletAddress, "get_wallet_data", null, tc).then((reader) => {
+          const balance = reader.readBigNumber();
+          reader.readAddress(); // skip owner
+          const jettonMasterAddress = reader.readAddress();
+
+          return {
+            balance,
+            jWalletAddress,
+            jettonMasterAddress,
+          };
+        })
+      : null;
+
+    return {
+      minter,
+      jettonWallet,
+    };
+  }
 
   // async fixFaultyJetton(
   //   contractAddress: Address,
