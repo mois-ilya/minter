@@ -58,16 +58,15 @@ function BurnJettonsAction() {
     try {
       setActionInProgress(true);
 
-      throw new Error("Not implemented"); // TODO: Implement burnJettons
-      // await jettonDeployController.burnJettons(
-      //   tonconnect,
-      //   valueDecimals,
-      //   jettonWalletAddress!,
-      //   walletAddress,
-      // );
-      // const message = `Successfully burned ${amount.toLocaleString()} ${symbol}`;
-      // showNotification(message, "success");
-      // getJettonDetails();
+      await jettonDeployController.burnJettons(
+        tonconnect,
+        valueDecimals,
+        jettonWalletAddress!,
+        walletAddress,
+      );
+      const message = `Successfully burned ${amount.toLocaleString()} ${symbol}`;
+      showNotification(message, "success");
+      getJettonDetails();
     } catch (error) {
       if (error instanceof Error) {
         showNotification(error.message, "error");
