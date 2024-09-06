@@ -110,6 +110,7 @@ class JettonDeployController {
     amount: bigint,
     walletAddress: string,
   ) {
+    // TODO: what is this for?
     // const tc = await getClient();
     // const waiter = await waitForSeqno(
     //   tc.openWalletFromAddress({
@@ -132,7 +133,6 @@ class JettonDeployController {
     };
 
     await tonConnection.sendTransaction(tx);
-    // TODO: create transaction QR
     // await waiter();
   }
 
