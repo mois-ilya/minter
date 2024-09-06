@@ -73,7 +73,9 @@ const RowContent = styled(Box)(({ theme }) => ({
   },
 }));
 
-const RowValueSection = styled(Box)(({ hasButton }: { hasButton?: boolean }) => ({
+const RowValueSection = styled(Box, {
+  shouldForwardProp: (prop) => prop !== "hasButton",
+})(({ hasButton }: { hasButton?: boolean }) => ({
   width: hasButton ? "calc(100% - 140px)" : "100%",
   display: "flex",
   alignItems: "center",

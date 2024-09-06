@@ -21,7 +21,9 @@ interface InputProps {
   showLabel?: boolean;
 }
 
-const TextInput = styled(TextField)((props: InputProps) => ({ theme }) => ({
+const TextInput = styled(TextField, {
+  shouldForwardProp: (prop) => prop !== "showLabel",
+})(({ showLabel }: InputProps) => ({ theme }) => ({
   background: "#F7F9FB",
   borderRadius: 40,
   border: "none",
@@ -34,7 +36,7 @@ const TextInput = styled(TextField)((props: InputProps) => ({ theme }) => ({
     marginLeft: 15,
   },
   "& label": {
-    display: props.showLabel ? "inline" : "none",
+    display: showLabel ? "inline" : "none",
     marginLeft: theme.spacing(0.8),
     "&.Mui-focused": {
       display: "none",
