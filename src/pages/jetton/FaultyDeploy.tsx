@@ -31,21 +31,18 @@ function FaultyDeploy() {
     try {
       setIsLoading(true);
 
-      throw new Error("Not implemented");
-
-      // TODO: Implement fixFaultyJetton
-      // await jettonDeployController.fixFaultyJetton(
-      //   Address.parse(jettonMaster),
-      //   {
-      //     symbol,
-      //     name,
-      //     description,
-      //     image: jettonImage,
-      //   },
-      //   tonconnect,
-      //   address,
-      // );
-      // await getJettonDetails();
+      await jettonDeployController.fixFaultyJetton(
+        Address.parse(jettonMaster),
+        {
+          symbol,
+          name,
+          description,
+          image: jettonImage,
+        },
+        tonconnect,
+        address,
+      );
+      await getJettonDetails();
     } catch (error) {
       console.log(error);
     } finally {
