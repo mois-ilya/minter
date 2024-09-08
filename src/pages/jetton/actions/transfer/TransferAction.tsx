@@ -8,7 +8,7 @@ import { ButtonWrapper, TransferContent, TransferWrapper } from "./styled";
 import { AppHeading } from "components/appHeading";
 import { AppNumberInput, AppTextInput } from "components/appInput";
 import { toDecimals } from "utils";
-import { useRecoilState, useSetRecoilState } from "recoil";
+import { useRecoilState } from "recoil";
 import { jettonActionsState } from "pages/jetton/actions/jettonActions";
 import { useTonAddress, useTonConnectUI } from "@tonconnect/ui-react";
 
@@ -28,9 +28,13 @@ export const TransferAction = () => {
   }
 
   const onSubmit = async () => {
+    if (!decimals || !amount || !toAddress) {
+      throw new Error("Invalid input data for transfer");
+    }
+
     const error = validateTransfer(
       toAddress,
-      toDecimals(amount!, decimals!),
+      toDecimals(amount, decimals),
       balance,
       symbol,
       decimals,
@@ -42,25 +46,22 @@ export const TransferAction = () => {
 
     setActionInProgress(true);
     try {
-      throw new Error("Not implemented");
-
-      // TODO: Implement transfer
-      // await jettonDeployController.transfer(
-      //   tonconnect,
-      //   toDecimals(amount!.toString(), decimals!),
-      //   toAddress!,
-      //   connectedWalletAddress!,
-      //   jettonWalletAddress,
-      // );
-      // setToAddress(undefined);
-      // setAmount(undefined);
-      // getJettonDetails();
-      // showNotification(
-      //   `Successfully transfered ${amount?.toLocaleString()} ${symbol}`,
-      //   "warning",
-      //   undefined,
-      //   4000,
-      // );
+      await jettonDeployController.transfer(
+        tonconnect,
+        toDecimals(amount.toString(), decimals),
+        toAddress,
+        connectedWalletAddress!,
+        jettonWalletAddress,
+      );
+      setToAddress(undefined);
+      setAmount(undefined);
+      getJettonDetails();
+      showNotification(
+        `Successfully transfered ${amount.toLocaleString()} ${symbol}`,
+        "warning",
+        undefined,
+        4000,
+      );
     } catch (error) {
       if (error instanceof Error) {
         showNotification(error.message, "error");
