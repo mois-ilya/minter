@@ -3,11 +3,8 @@ import { onchainFormSpec } from "pages/deployer/data";
 import { Form } from "components/form";
 import { JettonStoreState } from "store/jetton-store";
 import { jettonDeployController } from "lib/deploy-controller";
-import WalletConnection from "services/wallet-connection";
 import { Address } from "@ton/core";
 import useNotification from "hooks/useNotification";
-import { useSetRecoilState } from "recoil";
-import { jettonActionsState } from "pages/jetton/actions/jettonActions";
 import { useTonAddress, useTonConnectUI } from "@tonconnect/ui-react";
 import { useState } from "react";
 
