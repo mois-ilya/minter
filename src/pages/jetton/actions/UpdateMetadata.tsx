@@ -62,23 +62,20 @@ function UpdateMetadata({ setOpen }: UpdateMetadataProps) {
         throw new Error("");
       }
 
-      throw new Error("Not implemented");
-
-      // TODO: Implement updateMetadata
-      // await jettonDeployController.updateMetadata(
-      //   Address.parse(jettonMaster),
-      //   {
-      //     symbol: values.symbol,
-      //     name: values.name,
-      //     description: values.description,
-      //     image: values.tokenImage,
-      //     decimals: parseInt(values.decimals).toFixed(0),
-      //   },
-      //   tonconnect,
-      //   walltAddress,
-      // );
-      // await getJettonDetails();
-      // setOpen(false);
+      await jettonDeployController.updateMetadata(
+        Address.parse(jettonMaster),
+        {
+          symbol: values.symbol,
+          name: values.name,
+          description: values.description,
+          image: values.tokenImage,
+          decimals: parseInt(values.decimals).toFixed(0),
+        },
+        tonconnect,
+        walltAddress,
+      );
+      await getJettonDetails();
+      setOpen(false);
     } catch (error) {
       if (error instanceof Error) {
         showNotification(error.message, "error");

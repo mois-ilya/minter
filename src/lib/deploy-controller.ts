@@ -281,37 +281,38 @@ class JettonDeployController {
   //   await waiter();
   // }
 
-  // async updateMetadata(
-  //   contractAddress: Address,
-  //   data: {
-  //     [s in JettonMetaDataKeys]?: string | undefined;
-  //   },
-  //   connection: TonConnectUI,
-  //   walltAddress: string,
-  // ) {
-  //   const tc = await getClient();
-  //   const waiter = await waitForSeqno(
-  //     tc.openWalletFromAddress({
-  //       source: Address.parse(walltAddress),
-  //     }),
-  //   );
+  async updateMetadata(
+    contractAddress: Address,
+    data: {
+      [s in JettonMetaDataKeys]?: string | undefined;
+    },
+    connection: TonConnectUI,
+    walltAddress: string,
+  ) {
+    // TODO: what is this for?
+    // const tc = await getClient();
+    // const waiter = await waitForSeqno(
+    //   tc.openWalletFromAddress({
+    //     source: Address.parse(walltAddress),
+    //   }),
+    // );
 
-  //   const tx: SendTransactionRequest = {
-  //     validUntil: Date.now() + 5 * 60 * 1000,
-  //     messages: [
-  //       {
-  //         address: contractAddress.toString(),
-  //         amount: toNano(0.01).toString(),
-  //         stateInit: undefined,
-  //         payload: updateMetadataBody(buildJettonOnchainMetadata(data)).toBoc().toString("base64"),
-  //       },
-  //     ],
-  //   };
+    const tx: SendTransactionRequest = {
+      validUntil: Date.now() + 5 * 60 * 1000,
+      messages: [
+        {
+          address: contractAddress.toString(),
+          amount: toNano(0.01).toString(),
+          stateInit: undefined,
+          payload: updateMetadataBody(buildJettonOnchainMetadata(data)).toBoc().toString("base64"),
+        },
+      ],
+    };
 
-  //   await connection.sendTransaction(tx);
+    await connection.sendTransaction(tx);
 
-  //   await waiter();
-  // }
+    // await waiter();
+  }
 }
 
 const jettonDeployController = new JettonDeployController();
