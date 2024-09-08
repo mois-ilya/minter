@@ -39,16 +39,16 @@ function RevokeOwnershipAction() {
       }
       setActionInProgress(true);
 
-      throw new Error("Not implemented");
+      // throw new Error("Not implemented");
 
       // TODO: Implement burnJettons
-      // await jettonDeployController.burnAdmin(
-      //   Address.parse(jettonMaster),
-      //   tonconnect,
-      //   walletAddress,
-      // );
-      // getJettonDetails();
-      // showNotification("Ownership revoked successfully", "success");
+      await jettonDeployController.burnAdmin(
+        Address.parse(jettonMaster),
+        tonconnect,
+        walletAddress,
+      );
+      getJettonDetails();
+      showNotification("Ownership revoked successfully", "success");
     } catch (error) {
       if (error instanceof Error) {
         showNotification(error.message, "error");
