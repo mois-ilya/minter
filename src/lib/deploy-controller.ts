@@ -136,39 +136,39 @@ class JettonDeployController {
     // await waiter();
   }
 
-  // async transfer(
-  //   tonConnection: TonConnectUI,
-  //   amount: BN,
-  //   toAddress: string,
-  //   fromAddress: string,
-  //   ownerJettonWallet: string,
-  // ) {
-  //   const tc = await getClient();
+  async transfer(
+    tonConnection: TonConnectUI,
+    amount: bigint,
+    toAddress: string,
+    fromAddress: string,
+    ownerJettonWallet: string,
+  ) {
+    // const tc = await getClient();
 
-  //   const waiter = await waitForSeqno(
-  //     tc.openWalletFromAddress({
-  //       source: Address.parse(fromAddress),
-  //     }),
-  //   );
+    // const waiter = await waitForSeqno(
+    //   tc.openWalletFromAddress({
+    //     source: Address.parse(fromAddress),
+    //   }),
+    // );
 
-  //   const tx: SendTransactionRequest = {
-  //     validUntil: Date.now() + 5 * 60 * 1000,
-  //     messages: [
-  //       {
-  //         address: ownerJettonWallet,
-  //         amount: toNano(0.05).toString(),
-  //         stateInit: undefined,
-  //         payload: transfer(Address.parse(toAddress), Address.parse(fromAddress), amount)
-  //           .toBoc()
-  //           .toString("base64"),
-  //       },
-  //     ],
-  //   };
+    const tx: SendTransactionRequest = {
+      validUntil: Date.now() + 5 * 60 * 1000,
+      messages: [
+        {
+          address: ownerJettonWallet,
+          amount: toNano(0.05).toString(),
+          stateInit: undefined,
+          payload: transfer(Address.parse(toAddress), Address.parse(fromAddress), amount)
+            .toBoc()
+            .toString("base64"),
+        },
+      ],
+    };
 
-  //   await tonConnection.sendTransaction(tx);
+    await tonConnection.sendTransaction(tx);
 
-  //   await waiter();
-  // }
+    // await waiter();
+  }
 
   async burnJettons(
     tonConnection: TonConnectUI,
