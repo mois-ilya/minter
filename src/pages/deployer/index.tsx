@@ -8,13 +8,7 @@ import { ContractDeployer } from "lib/contract-deployer";
 import { Link as ReactRouterLink } from "react-router-dom";
 import { ROUTES } from "consts";
 import useNotification from "hooks/useNotification";
-import {
-  FormWrapper,
-  ScreenHeading,
-  StyledDescription,
-  StyledTxLoaderContent,
-  SubHeadingWrapper,
-} from "./styles";
+import { FormWrapper, ScreenHeading, StyledDescription, SubHeadingWrapper } from "./styles";
 import { Screen, ScreenContent } from "components/Screen";
 import analytics, { AnalyticsAction, AnalyticsCategory } from "services/analytics";
 import { getUrlParam, toDecimals } from "utils";

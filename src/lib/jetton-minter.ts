@@ -1,14 +1,4 @@
-import {
-  Cell,
-  beginCell,
-  Address,
-  toNano,
-  Dictionary,
-  Slice,
-  BitBuilder,
-  BitReader,
-  Builder,
-} from "@ton/core";
+import { Cell, beginCell, Address, toNano, Dictionary, Slice, Builder } from "@ton/core";
 
 import walletHex from "./contracts/jetton-wallet.compiled.json";
 import minterHex from "./contracts/jetton-minter.compiled.json";

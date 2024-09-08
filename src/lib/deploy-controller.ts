@@ -1,4 +1,4 @@
-import { Address, beginCell, Cell, toNano } from "@ton/ton";
+import { Address, beginCell, toNano } from "@ton/ton";
 import { ContractDeployer } from "./contract-deployer";
 
 import { createDeployParams, waitForContractDeploy, waitForSeqno } from "./utils";
@@ -12,8 +12,8 @@ import {
   updateMetadataBody,
 } from "./jetton-minter";
 import { changeAdminBody, JettonMetaDataKeys } from "./jetton-minter";
-import { getClient, getEndpoint } from "./get-ton-client";
-import { cellToAddress, makeGetCall } from "./make-get-call";
+import { getClient } from "./get-ton-client";
+import { makeGetCall } from "./make-get-call";
 import { SendTransactionRequest, TonConnectUI } from "@tonconnect/ui-react";
 
 export const JETTON_DEPLOY_GAS = toNano(0.25);
