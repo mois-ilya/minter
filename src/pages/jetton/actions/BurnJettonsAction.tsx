@@ -8,8 +8,6 @@ import useJettonStore from "store/jetton-store/useJettonStore";
 import { AppButton } from "components/appButton";
 import { AppNumberInput } from "components/appInput";
 import { toDecimals } from "utils";
-import { useRecoilState } from "recoil";
-import { jettonActionsState } from "pages/jetton/actions/jettonActions";
 import { useTonAddress, useTonConnectUI } from "@tonconnect/ui-react";
 
 function BurnJettonsAction() {
