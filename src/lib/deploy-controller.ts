@@ -78,31 +78,31 @@ class JettonDeployController {
     return contractAddr;
   }
 
-  // async burnAdmin(contractAddress: Address, tonConnection: TonConnectUI, walletAddress: string) {
-  //   // @ts-ignore
-  //   const tc = await getClient();
-  //   const waiter = await waitForSeqno(
-  //     tc.openWalletFromAddress({
-  //       source: Address.parse(walletAddress),
-  //     }),
-  //   );
+  async burnAdmin(contractAddress: Address, tonConnection: TonConnectUI, walletAddress: string) {
+    // TODO: what is this for?
+    // const tc = await getClient();
+    // const waiter = await waitForSeqno(
+    //   tc.openWalletFromAddress({
+    //     source: Address.parse(walletAddress),
+    //   }),
+    // );
 
-  //   const tx: SendTransactionRequest = {
-  //     validUntil: Date.now() + 5 * 60 * 1000,
-  //     messages: [
-  //       {
-  //         address: contractAddress.toString(),
-  //         amount: toNano(0.01).toString(),
-  //         stateInit: undefined,
-  //         payload: changeAdminBody(zeroAddress()).toBoc().toString("base64"),
-  //       },
-  //     ],
-  //   };
+    const tx: SendTransactionRequest = {
+      validUntil: Date.now() + 5 * 60 * 1000,
+      messages: [
+        {
+          address: contractAddress.toString(),
+          amount: toNano(0.01).toString(),
+          stateInit: undefined,
+          payload: changeAdminBody(zeroAddress()).toBoc().toString("base64"),
+        },
+      ],
+    };
 
-  //   await tonConnection.sendTransaction(tx);
+    await tonConnection.sendTransaction(tx);
 
-  //   await waiter();
-  // }
+    // await waiter();
+  }
 
   async mint(
     tonConnection: TonConnectUI,
