@@ -1,4 +1,3 @@
-import React from "react";
 import { Box, IconButton, Typography } from "@mui/material";
 import { JETTON_DEPLOYER_CONTRACTS_GITHUB } from "consts";
 import { StyledGithubIcon } from "components/header/headerMenu/styled";

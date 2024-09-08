@@ -40,7 +40,7 @@ export const EditLogoPopup = ({
 
   useEffect(() => {
     setTempUrl(jettonLogo.logoUrl);
-  }, [showPopup]);
+  }, [showPopup, jettonLogo.logoUrl]);
 
   return (
     <Popup open={showPopup} onClose={close} maxWidth={644}>
