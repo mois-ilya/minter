@@ -83,7 +83,7 @@ function DeployerPage() {
     }
 
     try {
-      const result = await jettonDeployController.createJetton(params, tonconnect, walletAddress);
+      const result = await jettonDeployController.createJetton(params, tonconnect);
       analytics.sendEvent(
         AnalyticsCategory.DEPLOYER_PAGE,
         AnalyticsAction.DEPLOY,

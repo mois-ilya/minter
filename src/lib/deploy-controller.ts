@@ -44,11 +44,7 @@ export interface JettonDeployParams {
 }
 
 class JettonDeployController {
-  async createJetton(
-    params: JettonDeployParams,
-    tonConnection: TonConnectUI,
-    walletAddress: string,
-  ): Promise<Address> {
+  async createJetton(params: JettonDeployParams, tonConnection: TonConnectUI): Promise<Address> {
     const contractDeployer = new ContractDeployer();
     const tc = await getClient();
     const balance = await tc.getBalance(params.owner);
@@ -79,13 +75,7 @@ class JettonDeployController {
   }
 
   async burnAdmin(contractAddress: Address, tonConnection: TonConnectUI, walletAddress: string) {
-    // TODO: what is this for?
-    // const tc = await getClient();
-    // const waiter = await waitForSeqno(
-    //   tc.openWalletFromAddress({
-    //     source: Address.parse(walletAddress),
-    //   }),
-    // );
+    const waiter = await waitForSeqno(walletAddress);
 
     const tx: SendTransactionRequest = {
       validUntil: Date.now() + 5 * 60 * 1000,
@@ -100,8 +90,7 @@ class JettonDeployController {
     };
 
     await tonConnection.sendTransaction(tx);
-
-    // await waiter();
+    await waiter();
   }
 
   async mint(
@@ -110,13 +99,7 @@ class JettonDeployController {
     amount: bigint,
     walletAddress: string,
   ) {
-    // TODO: what is this for?
-    // const tc = await getClient();
-    // const waiter = await waitForSeqno(
-    //   tc.openWalletFromAddress({
-    //     source: Address.parse(walletAddress),
-    //   }),
-    // );
+    const waiter = await waitForSeqno(walletAddress);
 
     const tx: SendTransactionRequest = {
       validUntil: Date.now() + 5 * 60 * 1000,
@@ -133,7 +116,7 @@ class JettonDeployController {
     };
 
     await tonConnection.sendTransaction(tx);
-    // await waiter();
+    await waiter();
   }
 
   async transfer(
@@ -143,13 +126,7 @@ class JettonDeployController {
     fromAddress: string,
     ownerJettonWallet: string,
   ) {
-    // const tc = await getClient();
-
-    // const waiter = await waitForSeqno(
-    //   tc.openWalletFromAddress({
-    //     source: Address.parse(fromAddress),
-    //   }),
-    // );
+    const waiter = await waitForSeqno(fromAddress);
 
     const tx: SendTransactionRequest = {
       validUntil: Date.now() + 5 * 60 * 1000,
@@ -167,7 +144,7 @@ class JettonDeployController {
 
     await tonConnection.sendTransaction(tx);
 
-    // await waiter();
+    await waiter();
   }
 
   async burnJettons(
@@ -176,14 +153,7 @@ class JettonDeployController {
     jettonAddress: string,
     walletAddress: string,
   ) {
-    // TODO: what is this for?
-    // const tc = await getClient();
-
-    // const waiter = await waitForSeqno(
-    //   tc.openWalletFromAddress({
-    //     source: Address.parse(walletAddress),
-    //   }),
-    // );
+    const waiter = await waitForSeqno(walletAddress);
 
     const tx: SendTransactionRequest = {
       validUntil: Date.now() + 5 * 60 * 1000,
@@ -199,7 +169,7 @@ class JettonDeployController {
 
     await tonConnection.sendTransaction(tx);
 
-    // await waiter();
+    await waiter();
   }
 
   async getJettonDetails(contractAddr: Address, owner: Address) {
@@ -257,12 +227,8 @@ class JettonDeployController {
     connection: TonConnectUI,
     walletAddress: string,
   ) {
-    // const tc = await getClient();
-    // const waiter = await waitForSeqno(
-    //   tc.openWalletFromAddress({
-    //     source: Address.parse(walletAddress),
-    //   }),
-    // );
+    const waiter = await waitForSeqno(walletAddress);
+
     const body = updateMetadataBody(buildJettonOnchainMetadata(data));
     const tx: SendTransactionRequest = {
       validUntil: Date.now() + 5 * 60 * 1000,
@@ -278,7 +244,7 @@ class JettonDeployController {
 
     await connection.sendTransaction(tx);
 
-    // await waiter();
+    await waiter();
   }
 
   async updateMetadata(
@@ -287,15 +253,9 @@ class JettonDeployController {
       [s in JettonMetaDataKeys]?: string | undefined;
     },
     connection: TonConnectUI,
-    walltAddress: string,
+    walletAddress: string,
   ) {
-    // TODO: what is this for?
-    // const tc = await getClient();
-    // const waiter = await waitForSeqno(
-    //   tc.openWalletFromAddress({
-    //     source: Address.parse(walltAddress),
-    //   }),
-    // );
+    const waiter = await waitForSeqno(walletAddress);
 
     const tx: SendTransactionRequest = {
       validUntil: Date.now() + 5 * 60 * 1000,
@@ -311,7 +271,7 @@ class JettonDeployController {
 
     await connection.sendTransaction(tx);
 
-    // await waiter();
+    await waiter();
   }
 }
 

@@ -1,5 +1,5 @@
 import { Address, Cell } from "@ton/core";
-import { TonClient, TupleItem, TupleItemSlice, TupleReader } from "@ton/ton";
+import { TonClient, TupleItem, TupleReader } from "@ton/ton";
 
 function _prepareParam(param: Cell | bigint): TupleItem {
   if (param instanceof Cell) {
