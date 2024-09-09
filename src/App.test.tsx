@@ -18,7 +18,7 @@ test("Long serialization", async () => {
   };
 
   const resultC = buildJettonOnchainMetadata(data);
-  const hexC = resultC.toBoc({ idx: false }).toString("hex");
+  const hexC = resultC.toBoc({ idx: false });
   const deserC = Cell.fromBoc(hexC)[0];
 
   expect(await readJettonMetadata(deserC)).toEqual({

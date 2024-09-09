@@ -11,9 +11,6 @@
     "@mui/lab": "^5.0.0-alpha.85",
     "@mui/material": "^5.8.2",
     "@orbs-network/ton-access": "^2.2.2",
-    "@testing-library/jest-dom": "^5.16.4",
-    "@testing-library/react": "^13.3.0",
-    "@testing-library/user-event": "^13.5.0",
     "@ton/core": "^0.57.0",
     "@ton/crypto": "^3.3.0",
     "@ton/ton": "^14.0.0",
@@ -67,7 +64,11 @@
     ]
   },
   "devDependencies": {
-    "@types/jest": "^27.5.1",
+    "@babel/preset-env": "^7.25.4",
+    "@testing-library/jest-dom": "^6.5.0",
+    "@testing-library/react": "^16.0.1",
+    "@testing-library/user-event": "^14.5.2",
+    "@types/jest": "^29.5.12",
     "@types/node": "^16.11.36",
     "@types/react": "^18.0.9",
     "@types/react-copy-to-clipboard": "^5.0.2",
