@@ -53,7 +53,7 @@ export async function waitForContractDeploy(address: Address, client: TonClient)
 }
 
 export const createDeployParams = (params: JettonDeployParams, offchainUri?: string) => {
-  const queryId = parseInt(process.env.REACT_APP_DEPLOY_QUERY_ID ?? "0");
+  const queryId = parseInt(process.env.REACT_APP_DEPLOY_QUERY_ID || "0");
 
   return {
     code: JETTON_MINTER_CODE,
