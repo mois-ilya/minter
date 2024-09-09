@@ -19,10 +19,6 @@ function _prepareParam(param: Cell | bigint): TupleItem {
 
 export type GetResponseValue = Cell | bigint | null;
 
-export function cellToAddress(s: GetResponseValue): Address {
-  return (s as Cell).beginParse().loadAddress();
-}
-
 export async function makeGetCall(
   address: Address,
   method: string,
@@ -30,7 +26,7 @@ export async function makeGetCall(
   tonClient: TonClient,
 ): Promise<TupleReader> {
   const params = param === null ? [] : [_prepareParam(param)];
-  const { stack } = await tonClient.callGetMethod(address, method, params);
+  const { stack } = await tonClient.runMethod(address, method, params);
 
   return stack;
 }

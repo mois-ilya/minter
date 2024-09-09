@@ -53,13 +53,16 @@ export async function waitForContractDeploy(address: Address, client: TonClient)
 }
 
 export const createDeployParams = (params: JettonDeployParams, offchainUri?: string) => {
-  const queryId = parseInt(process.env.REACT_APP_DEPLOY_QUERY_ID ?? "0");
+  const deployer = params.owner;
+  const queryId = parseInt(process.env.REACT_APP_DEPLOY_QUERY_ID || "1083895200524364");
+  const data = initData(deployer, params.onchainMetaData, offchainUri);
+  const message = mintBody(deployer, params.amountToMint, toNano(0.2), queryId);
 
   return {
+    data,
+    message,
+    deployer,
     code: JETTON_MINTER_CODE,
-    data: initData(params.owner, params.onchainMetaData, offchainUri),
-    deployer: params.owner,
     value: JETTON_DEPLOY_GAS,
-    message: mintBody(params.owner, params.amountToMint, toNano(0.2), queryId),
   };
 };

@@ -23,14 +23,17 @@ enum OPS {
   Burn = 0x595f07bc,
 }
 
-export type JettonMetaDataKeys =
-  | "name"
-  | "description"
-  | "image"
-  | "symbol"
-  | "image_data"
-  | "decimals"
-  | "uri";
+export interface JettonMetadata {
+  name?: string;
+  description?: string;
+  image?: string;
+  symbol?: string;
+  image_data?: string;
+  decimals?: string;
+  uri?: string;
+}
+
+export type JettonMetaDataKeys = keyof JettonMetadata;
 
 const jettonOnChainMetadataSpec: Map<JettonMetaDataKeys, "utf8" | "ascii" | undefined> = new Map([
   ["name", "utf8"],
