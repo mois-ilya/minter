@@ -1,8 +1,3 @@
-interface Env {
-  rpcApi: string;
-  deepLinkPrefix: string;
-}
-
 export enum Environments {
   MAINNET,
   TESTNET,

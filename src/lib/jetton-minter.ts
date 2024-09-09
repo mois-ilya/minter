@@ -1,9 +1,7 @@
-import BN from "bn.js";
-import { Cell, beginCell, Address, beginDict, Slice, toNano } from "ton";
+import { Cell, beginCell, Address, toNano, Dictionary, Slice, Builder } from "@ton/core";
 
 import walletHex from "./contracts/jetton-wallet.compiled.json";
 import minterHex from "./contracts/jetton-minter.compiled.json";
-// @ts-ignore
 import { Sha256 } from "@aws-crypto/sha256-js";
 import axios from "axios";
 
@@ -11,8 +9,10 @@ const ONCHAIN_CONTENT_PREFIX = 0x00;
 const OFFCHAIN_CONTENT_PREFIX = 0x01;
 const SNAKE_PREFIX = 0x00;
 
-export const JETTON_WALLET_CODE = Cell.fromBoc(walletHex.hex)[0];
-export const JETTON_MINTER_CODE = Cell.fromBoc(minterHex.hex)[0]; // code cell from build output
+const SNAKE_CELL_MAX_SIZE_BYTES = Math.floor((1023 - 8) / 8); // 126 bytes
+
+export const JETTON_WALLET_CODE = Cell.fromBoc(Buffer.from(walletHex.hex, "hex"))[0];
+export const JETTON_MINTER_CODE = Cell.fromBoc(Buffer.from(minterHex.hex, "hex"))[0]; // code cell from build output
 
 enum OPS {
   ChangeAdmin = 3,
@@ -32,17 +32,15 @@ export type JettonMetaDataKeys =
   | "decimals"
   | "uri";
 
-const jettonOnChainMetadataSpec: {
-  [key in JettonMetaDataKeys]: "utf8" | "ascii" | undefined;
-} = {
-  name: "utf8",
-  description: "utf8",
-  image: "ascii",
-  decimals: "utf8",
-  symbol: "utf8",
-  image_data: undefined,
-  uri: "ascii",
-};
+const jettonOnChainMetadataSpec: Map<JettonMetaDataKeys, "utf8" | "ascii" | undefined> = new Map([
+  ["name", "utf8"],
+  ["description", "utf8"],
+  ["image", "ascii"],
+  ["symbol", "utf8"],
+  ["image_data", undefined],
+  ["decimals", "utf8"],
+  ["uri", "ascii"],
+]);
 
 const sha256 = (str: string) => {
   const sha = new Sha256();
@@ -50,37 +48,82 @@ const sha256 = (str: string) => {
   return Buffer.from(sha.digestSync());
 };
 
-export function buildJettonOnchainMetadata(data: { [s: string]: string | undefined }): Cell {
-  const KEYLEN = 256;
-  const dict = beginDict(KEYLEN);
+function bufferToChunks(buff: Buffer, chunkSize: number) {
+  const chunks: Buffer[] = [];
+  while (buff.byteLength > 0) {
+    chunks.push(buff.subarray(0, chunkSize));
+    buff = buff.subarray(chunkSize);
+  }
+  return chunks;
+}
+
+export function makeSnakeCell(data: Buffer): Cell {
+  const chunks = bufferToChunks(data, SNAKE_CELL_MAX_SIZE_BYTES);
+
+  const [firstChunk, ...tailChunks] = chunks;
+
+  const secondChunk = tailChunks[0];
+  const tailBuilder =
+    tailChunks.length !== 0 &&
+    tailChunks.toReversed().reduce((prevBuilder, chunk) => {
+      prevBuilder.storeBuffer(chunk);
+      return secondChunk === chunk ? prevBuilder : beginCell().storeRef(prevBuilder);
+    }, beginCell());
+
+  const rootBuilder = beginCell().storeUint(SNAKE_PREFIX, 8);
+  firstChunk && rootBuilder.storeBuffer(firstChunk);
+  tailBuilder && rootBuilder.storeRef(tailBuilder);
+
+  return rootBuilder.endCell();
+}
+
+export function flattenSnakeCell(cell: Cell): Buffer {
+  const sliceToBuffer = (c: Cell, v: Buffer, isFirst: boolean): Buffer => {
+    const s = c.beginParse();
+
+    if (isFirst && s.loadUint(8) !== SNAKE_PREFIX)
+      throw new Error("Only snake format is supported");
+
+    if (s.remainingBits === 0) return v;
+
+    const data = s.loadBuffer(s.remainingBits / 8);
+    v = Buffer.concat([v, data]);
+
+    const newCell = s.remainingRefs > 0 ? s.loadRef() : null;
+    s.endParse();
+
+    return newCell ? sliceToBuffer(newCell, v, false) : v;
+  };
+
+  const buffer = sliceToBuffer(cell, Buffer.from(""), true);
+
+  return buffer;
+}
+
+function toDictKey(key: string): bigint {
+  return BigInt(`0x${sha256(key).toString("hex")}`);
+}
+
+export function buildJettonOnchainMetadata(data: {
+  [s in JettonMetaDataKeys]?: string | undefined;
+}): Cell {
+  const dict = Dictionary.empty(Dictionary.Keys.BigUint(256), Dictionary.Values.Cell());
 
   Object.entries(data).forEach(([k, v]: [string, string | undefined]) => {
-    if (!jettonOnChainMetadataSpec[k as JettonMetaDataKeys])
+    const key = k as JettonMetaDataKeys;
+
+    if (!jettonOnChainMetadataSpec.get(key)) {
       throw new Error(`Unsupported onchain key: ${k}`);
-    if (v === undefined || v === "") return;
-
-    let bufferToStore = Buffer.from(v, jettonOnChainMetadataSpec[k as JettonMetaDataKeys]);
-
-    const CELL_MAX_SIZE_BYTES = Math.floor((1023 - 8) / 8);
-
-    const rootCell = new Cell();
-    rootCell.bits.writeUint8(SNAKE_PREFIX);
-    let currentCell = rootCell;
-
-    while (bufferToStore.length > 0) {
-      currentCell.bits.writeBuffer(bufferToStore.slice(0, CELL_MAX_SIZE_BYTES));
-      bufferToStore = bufferToStore.slice(CELL_MAX_SIZE_BYTES);
-      if (bufferToStore.length > 0) {
-        let newCell = new Cell();
-        currentCell.refs.push(newCell);
-        currentCell = newCell;
-      }
     }
 
-    dict.storeRef(sha256(k), rootCell);
+    if (v === undefined || v === "") return;
+
+    let bufferToStore = Buffer.from(v, jettonOnChainMetadataSpec.get(key));
+
+    dict.set(toDictKey(k), makeSnakeCell(bufferToStore));
   });
 
-  return beginCell().storeInt(ONCHAIN_CONTENT_PREFIX, 8).storeDict(dict.endDict()).endCell();
+  return beginCell().storeUint(ONCHAIN_CONTENT_PREFIX, 8).storeDict(dict).endCell();
 }
 
 export function buildJettonOffChainMetadata(contentUri: string): Cell {
@@ -98,8 +141,9 @@ export async function readJettonMetadata(contentCell: Cell): Promise<{
   isJettonDeployerFaultyOnChainData?: boolean;
 }> {
   const contentSlice = contentCell.beginParse();
+  const prefix = contentSlice.loadInt(8);
 
-  switch (contentSlice.readUint(8).toNumber()) {
+  switch (prefix) {
     case ONCHAIN_CONTENT_PREFIX: {
       const res = parseJettonOnchainMetadata(contentSlice);
 
@@ -135,7 +179,8 @@ async function parseJettonOffchainMetadata(contentSlice: Slice): Promise<{
   metadata: { [s in JettonMetaDataKeys]?: string };
   isIpfs: boolean;
 }> {
-  return getJettonMetadataFromExternalUri(contentSlice.readRemainingBytes().toString("ascii"));
+  console.log(contentSlice.loadStringTail());
+  return getJettonMetadataFromExternalUri(contentSlice.loadStringTail());
 }
 
 async function getJettonMetadataFromExternalUri(uri: string) {
@@ -151,47 +196,25 @@ function parseJettonOnchainMetadata(contentSlice: Slice): {
   metadata: { [s in JettonMetaDataKeys]?: string };
   isJettonDeployerFaultyOnChainData: boolean;
 } {
-  // Note that this relies on what is (perhaps) an internal implementation detail:
-  // "ton" library dict parser converts: key (provided as buffer) => BN(base10)
-  // and upon parsing, it reads it back to a BN(base10)
-  // tl;dr if we want to read the map back to a JSON with string keys, we have to convert BN(10) back to hex
-  const toKey = (str: string) => new BN(str, "hex").toString(10);
-  const KEYLEN = 256;
+  let isJettonDeployerFaultyOnChainData = false; // TODO: check if this is used
 
-  let isJettonDeployerFaultyOnChainData = false;
-
-  const dict = contentSlice.readDict(KEYLEN, (s) => {
-    let buffer = Buffer.from("");
-
-    const sliceToVal = (s: Slice, v: Buffer, isFirst: boolean) => {
-      s.toCell().beginParse();
-      if (isFirst && s.readUint(8).toNumber() !== SNAKE_PREFIX)
-        throw new Error("Only snake format is supported");
-
-      v = Buffer.concat([v, s.readRemainingBytes()]);
-      if (s.remainingRefs === 1) {
-        v = sliceToVal(s.readRef(), v, false);
+  const dict = contentSlice.loadDict(Dictionary.Keys.BigUint(256), {
+    serialize(src: Buffer, builder: Builder) {},
+    parse: (src: Slice): Buffer => {
+      if (src.remainingRefs === 0) {
+        isJettonDeployerFaultyOnChainData = true;
+        return flattenSnakeCell(src.asCell());
       }
-
-      return v;
-    };
-
-    if (s.remainingRefs === 0) {
-      isJettonDeployerFaultyOnChainData = true;
-      return sliceToVal(s, buffer, true);
-    }
-
-    return sliceToVal(s.readRef(), buffer, true);
+      return flattenSnakeCell(src.loadRef());
+    },
   });
 
-  const res: { [s in JettonMetaDataKeys]?: string } = {};
-
-  Object.keys(jettonOnChainMetadataSpec).forEach((k) => {
-    const val = dict
-      .get(toKey(sha256(k).toString("hex")))
-      ?.toString(jettonOnChainMetadataSpec[k as JettonMetaDataKeys]);
-    if (val) res[k as JettonMetaDataKeys] = val;
-  });
+  const res = Object.fromEntries(
+    Array.from(jettonOnChainMetadataSpec).map(([k, v]) => {
+      const val = dict.get(toDictKey(k))?.toString(v);
+      return [k, val];
+    }),
+  );
 
   return {
     metadata: res,
@@ -207,20 +230,23 @@ export function initData(
   if (!data && !offchainUri) {
     throw new Error("Must either specify onchain data or offchain uri");
   }
+
+  const metadata = offchainUri
+    ? buildJettonOffChainMetadata(offchainUri)
+    : buildJettonOnchainMetadata(data!);
+
   return beginCell()
     .storeCoins(0)
     .storeAddress(owner)
-    .storeRef(
-      offchainUri ? buildJettonOffChainMetadata(offchainUri) : buildJettonOnchainMetadata(data!),
-    )
+    .storeRef(metadata)
     .storeRef(JETTON_WALLET_CODE)
     .endCell();
 }
 
 export function mintBody(
   owner: Address,
-  jettonValue: BN,
-  transferToJWallet: BN,
+  jettonValue: bigint,
+  transferToJWallet: bigint,
   queryId: number,
 ): Cell {
   return beginCell()
@@ -243,7 +269,7 @@ export function mintBody(
     .endCell();
 }
 
-export function burn(amount: BN, responseAddress: Address) {
+export function burn(amount: bigint, responseAddress: Address) {
   return beginCell()
     .storeUint(OPS.Burn, 32) // action
     .storeUint(1, 64) // query-id
@@ -253,7 +279,7 @@ export function burn(amount: BN, responseAddress: Address) {
     .endCell();
 }
 
-export function transfer(to: Address, from: Address, jettonAmount: BN) {
+export function transfer(to: Address, from: Address, jettonAmount: bigint) {
   return beginCell()
     .storeUint(OPS.Transfer, 32)
     .storeUint(1, 64)

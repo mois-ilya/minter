@@ -29,7 +29,6 @@ export const EditLogoPopup = ({
 }: EditLogoPopupProps) => {
   const { jettonLogo, setLogoUrl } = useJettonLogo();
   const [tempUrl, setTempUrl] = useState("");
-  const [inputFocus, setInputFocus] = useState(false);
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
   useAutosizeTextArea(textAreaRef.current, tempUrl);
 
@@ -41,7 +40,7 @@ export const EditLogoPopup = ({
 
   useEffect(() => {
     setTempUrl(jettonLogo.logoUrl);
-  }, [showPopup]);
+  }, [showPopup, jettonLogo.logoUrl]);
 
   return (
     <Popup open={showPopup} onClose={close} maxWidth={644}>
@@ -51,8 +50,6 @@ export const EditLogoPopup = ({
           <LogoTextAreaWrapper>
             <LogoTextArea
               spellCheck={false}
-              onFocus={() => setInputFocus(true)}
-              onBlur={() => setInputFocus(false)}
               value={tempUrl}
               onChange={handleChange}
               ref={textAreaRef}

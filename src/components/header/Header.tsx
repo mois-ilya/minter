@@ -52,13 +52,13 @@ export const Header = () => {
               closeMenu={() => setMobileMenu(false)}
             />
             <HeaderExampleTextWrapper>
-              <HeaderExampleText>
-                Enter an existing Jetton contract address.
+              <Box>
+                <HeaderExampleText>Enter an existing Jetton contract address.</HeaderExampleText>
                 <HeaderExampleLink variant="body2" onClick={() => setExample(EXAMPLE_ADDRESS)}>
                   {" "}
                   example
                 </HeaderExampleLink>
-              </HeaderExampleText>
+              </Box>
             </HeaderExampleTextWrapper>
           </Box>
           <MobileMenu showMenu={mobileMenu && !matches} closeMenu={() => setMobileMenu(false)} />

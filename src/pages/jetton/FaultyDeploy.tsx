@@ -5,7 +5,7 @@ import { Popup } from "components/Popup";
 import useJettonStore from "store/jetton-store/useJettonStore";
 import { useState } from "react";
 import { jettonDeployController } from "lib/deploy-controller";
-import { Address } from "ton";
+import { Address } from "@ton/core";
 import { AppButton } from "components/appButton";
 import { useTonAddress, useTonConnectUI } from "@tonconnect/ui-react";
 
@@ -30,6 +30,7 @@ function FaultyDeploy() {
     }
     try {
       setIsLoading(true);
+
       await jettonDeployController.fixFaultyJetton(
         Address.parse(jettonMaster),
         {

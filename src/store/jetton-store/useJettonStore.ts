@@ -6,7 +6,7 @@ import { jettonDeployController } from "lib/deploy-controller";
 import { zeroAddress } from "lib/utils";
 import { useCallback } from "react";
 import { useRecoilState, useResetRecoilState } from "recoil";
-import { Address } from "ton";
+import { Address } from "@ton/core";
 import { getUrlParam, isValidAddress } from "utils";
 import { jettonStateAtom } from ".";
 
@@ -57,25 +57,24 @@ function useJettonStore() {
 
       if (!result) {
         console.log("empty");
-
         return;
       }
-      const _adminAddress = result.minter.admin?.toFriendly() ?? zeroAddress().toFriendly();
+      const _adminAddress = result.minter.admin?.toString() ?? zeroAddress().toString();
       const admin = isMyWallet && _adminAddress === connectedWalletAddress;
-
+      const metadata = result.minter.metadata;
       let image: string | undefined;
 
-      if (result.minter.metadata.image) {
+      if (metadata.image) {
         const img = new Image();
-        img.src = result.minter.metadata.image;
+        img.src = metadata.image;
         img.onerror = () => {
           setState((prev) => ({ ...prev, isImageBroken: true }));
         };
 
-        image = result.minter.metadata.image;
-      } else if (result.minter.metadata.image_data) {
+        image = metadata.image;
+      } else if (metadata.image_data) {
         try {
-          const imgData = Buffer.from(result.minter.metadata.image_data, "base64").toString();
+          const imgData = Buffer.from(metadata.image_data, "base64").toString();
           let type: string;
 
           if (/<svg xmlns/.test(imgData)) {
@@ -87,7 +86,7 @@ function useJettonStore() {
             type = "jpeg"; // Fallback
           }
 
-          image = `data:image/${type};base64,${result.minter.metadata.image_data}`;
+          image = `data:image/${type};base64,${metadata.image_data}`;
         } catch (e) {
           console.error("Error parsing img metadata");
         }
@@ -101,17 +100,17 @@ function useJettonStore() {
           ...prevState,
           isJettonDeployerFaultyOnChainData: result.minter.isJettonDeployerFaultyOnChainData,
           persistenceType: result.minter.persistenceType,
-          description: result.minter.metadata.description,
+          description: metadata.description,
           jettonImage: image ?? QuestiomMarkImg,
           totalSupply: result.minter.totalSupply,
-          name: result.minter.metadata.name,
-          symbol: result.minter.metadata.symbol,
-          adminRevokedOwnership: _adminAddress === zeroAddress().toFriendly(),
+          name: metadata.name,
+          symbol: metadata.symbol,
+          adminRevokedOwnership: _adminAddress === zeroAddress().toString(),
           isAdmin: admin,
-          decimals: result.minter.metadata.decimals || "9",
+          decimals: metadata.decimals || "9",
           adminAddress: _adminAddress,
           balance: result.jettonWallet ? result.jettonWallet.balance : undefined,
-          jettonWalletAddress: result.jettonWallet?.jWalletAddress?.toFriendly(),
+          jettonWalletAddress: result.jettonWallet?.jWalletAddress?.toString(),
           jettonMaster: jettonAddress,
           isMyWallet,
           selectedWalletAddress: address,

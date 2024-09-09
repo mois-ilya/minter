@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Address } from "ton";
+import { Address } from "@ton/core";
 import { Box, Fade, Link, Typography } from "@mui/material";
 import { jettonDeployController, JettonDeployParams } from "lib/deploy-controller";
 import WalletConnection from "services/wallet-connection";
@@ -8,16 +8,10 @@ import { ContractDeployer } from "lib/contract-deployer";
 import { Link as ReactRouterLink } from "react-router-dom";
 import { ROUTES } from "consts";
 import useNotification from "hooks/useNotification";
-import {
-  FormWrapper,
-  ScreenHeading,
-  StyledDescription,
-  StyledTxLoaderContent,
-  SubHeadingWrapper,
-} from "./styles";
+import { FormWrapper, ScreenHeading, StyledDescription, SubHeadingWrapper } from "./styles";
 import { Screen, ScreenContent } from "components/Screen";
 import analytics, { AnalyticsAction, AnalyticsCategory } from "services/analytics";
-import { getUrlParam, toDecimalsBN } from "utils";
+import { getUrlParam, toDecimals } from "utils";
 import { offchainFormSpec, onchainFormSpec } from "./data";
 import { Form } from "components/form";
 import { GithubButton } from "pages/deployer/githubButton";
@@ -66,7 +60,7 @@ function DeployerPage() {
         decimals: parseInt(decimals).toFixed(0),
       },
       offchainUri: data.offchainUri,
-      amountToMint: toDecimalsBN(data.mintAmount, decimals ?? DEFAULT_DECIMALS),
+      amountToMint: toDecimals(data.mintAmount, decimals ?? DEFAULT_DECIMALS),
     };
     setIsLoading(true);
     const deployParams = createDeployParams(params, data.offchainUri);
@@ -89,11 +83,11 @@ function DeployerPage() {
     }
 
     try {
-      const result = await jettonDeployController.createJetton(params, tonconnect, walletAddress);
+      const result = await jettonDeployController.createJetton(params, tonconnect);
       analytics.sendEvent(
         AnalyticsCategory.DEPLOYER_PAGE,
         AnalyticsAction.DEPLOY,
-        contractAddress.toFriendly(),
+        contractAddress.toString(),
       );
 
       navigate(`${ROUTES.jetton}/${Address.normalize(result)}`);
@@ -174,7 +168,17 @@ function Description() {
         </Link>
         . This free educational tool allows you to deploy your own Jetton to mainnet in one click.
         You will need at least 0.25 TON for deployment fees. <br />
-        <Spacer />
+      </Typography>
+      <Spacer />
+      <Typography
+        sx={{
+          fontWeight: 400,
+          color: "#728A96",
+          "& a": {
+            textDecoration: "none",
+            fontWeight: 500,
+          },
+        }}>
         For detailed instructions and in-depth explanations of all fields please see the{" "}
         <Link
           target="_blank"
@@ -182,7 +186,17 @@ function Description() {
           GitHub README
         </Link>
         . It includes several best practice recommendations so please take a look.
-        <Spacer />
+      </Typography>
+      <Spacer />
+      <Typography
+        sx={{
+          fontWeight: 400,
+          color: "#728A96",
+          "& a": {
+            textDecoration: "none",
+            fontWeight: 500,
+          },
+        }}>
         Never deploy code that you've never seen before! This deployer is fully open source with all
         smart contract code{" "}
         <Link target="_blank" href="https://github.com/ton-blockchain/minter-contract">
@@ -196,7 +210,17 @@ function Description() {
         <Link target="_blank" href="https://github.com/ton-blockchain/minter">
           GitHub Pages
         </Link>
-        . <Spacer />
+      </Typography>
+      . <Spacer />
+      <Typography
+        sx={{
+          fontWeight: 400,
+          color: "#728A96",
+          "& a": {
+            textDecoration: "none",
+            fontWeight: 500,
+          },
+        }}>
         Is this deployer safe? Yes! Read{" "}
         <Link
           target="_blank"

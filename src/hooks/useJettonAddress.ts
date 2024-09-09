@@ -1,6 +1,6 @@
 import { useParams } from "react-router-dom";
 import { useEffect } from "react";
-import { Address } from "ton";
+import { Address } from "@ton/core";
 import { isValidAddress } from "utils";
 import { useNavigatePreserveQuery } from "lib/hooks/useNavigatePreserveQuery";
 
@@ -9,7 +9,7 @@ export const useJettonAddress = () => {
   const { id }: { id?: string } = useParams();
   let isAddressValid = isValidAddress(id || "", "Invalid jetton address");
 
-  let jettonAddress = isAddressValid ? Address.parse(id!).toFriendly() : null;
+  let jettonAddress = isAddressValid ? Address.parse(id!).toString() : null;
 
   useEffect(() => {
     if (id && jettonAddress && jettonAddress !== id) {

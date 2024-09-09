@@ -2,7 +2,7 @@ import { Control, Controller } from "react-hook-form";
 import { useRef } from "react";
 import NumberFormat from "react-number-format";
 import FieldDescription from "components/FieldDescription";
-import { Typography } from "@mui/material";
+import { Box, Typography } from "@mui/material";
 import { StyledContainer, StyledInput, StyledInputContainer } from "components/form/input/styled";
 
 interface InputProps {
@@ -95,8 +95,8 @@ export function Input({
           </StyledInputContainer>
         )}
       />
-      <FieldDescription zeroPadding={zeroPadding}>
-        {description}
+      <Box display="flex">
+        <FieldDescription zeroPadding={zeroPadding}>{description}</FieldDescription>
         {!disabled && !disableExample && (
           <Typography
             sx={{
@@ -106,13 +106,14 @@ export function Input({
                 cursor: "pointer",
               },
             }}
+            style={{ fontSize: 14, marginTop: 5, opacity: 0.3, paddingLeft: zeroPadding ? 0 : 18 }}
             variant="body2"
             onClick={() => onExampleClick()}>
             {" "}
             example
           </Typography>
         )}
-      </FieldDescription>
+      </Box>
     </StyledContainer>
   );
 }

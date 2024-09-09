@@ -1,51 +1,36 @@
-import { Address, Cell, TonClient } from "ton";
-import BN from "bn.js";
+import { Address, Cell } from "@ton/core";
+import { TonClient, TupleItem, TupleReader } from "@ton/ton";
 
-function _prepareParams(params: any[] = []) {
-  return params.map((p) => {
-    if (p instanceof Cell) {
-      return ["tvm.Slice", p.toBoc({ idx: false }).toString("base64")];
-    } else if (p instanceof BN) {
-      return ["num", p.toString(10)];
-    }
+function _prepareParam(param: Cell | bigint): TupleItem {
+  if (param instanceof Cell) {
+    return {
+      type: "slice",
+      cell: param,
+    };
+  } else if (typeof param === "bigint") {
+    return {
+      type: "int",
+      value: param,
+    };
+  }
 
-    throw new Error("unknown type!");
-  });
+  throw new Error("unknown type!");
 }
 
-export type GetResponseValue = Cell | BN | null;
+export type GetResponseValue = Cell | bigint | null;
 
 export function cellToAddress(s: GetResponseValue): Address {
-  return (s as Cell).beginParse().readAddress() as Address;
+  return (s as Cell).beginParse().loadAddress();
 }
 
-function _parseGetMethodCall(stack: [["num" | "cell" | "list", any]]): GetResponseValue[] {
-  return stack.map(([type, val]) => {
-    switch (type) {
-      case "num":
-        return new BN(val.replace("0x", ""), "hex");
-      case "cell":
-        return Cell.fromBoc(Buffer.from(val.bytes, "base64"))[0];
-      case "list":
-        if (val.elements.length === 0) {
-          return null;
-        } else {
-          throw new Error("list parsing not supported");
-        }
-      default:
-        throw new Error(`unknown type: ${type}, val: ${JSON.stringify(val)}`);
-    }
-  });
-}
-
-export async function makeGetCall<T>(
-  address: Address | undefined,
-  name: string,
-  params: any[],
-  parser: (stack: GetResponseValue[]) => T,
+export async function makeGetCall(
+  address: Address,
+  method: string,
+  param: Cell | bigint | null,
   tonClient: TonClient,
-) {
-  const { stack } = await tonClient.callGetMethod(address!, name, _prepareParams(params));
+): Promise<TupleReader> {
+  const params = param === null ? [] : [_prepareParam(param)];
+  const { stack } = await tonClient.callGetMethod(address, method, params);
 
-  return parser(_parseGetMethodCall(stack as [["num" | "cell", any]]));
+  return stack;
 }

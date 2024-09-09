@@ -1,4 +1,4 @@
-import { Address } from "ton";
+import { Address } from "@ton/core";
 class WalletConnection {
   public static isContractDeployed(contractAddr: Address) {
     return false; // TODO fix

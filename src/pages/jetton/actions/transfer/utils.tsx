@@ -1,11 +1,10 @@
 import { isValidAddress } from "utils";
-import BN from "bn.js";
 import BigNumberDisplay from "components/BigNumberDisplay";
 
 export const validateTransfer = (
   toAddress?: string,
-  amount?: BN,
-  balance?: BN,
+  amount?: bigint,
+  balance?: bigint,
   symbol?: string,
   decimals?: string,
 ): string | undefined | JSX.Element => {
@@ -21,7 +20,11 @@ export const validateTransfer = (
     return "Transfer amount required";
   }
 
-  if (amount.gt(balance!!)) {
+  if (!balance) {
+    return "Balance not available";
+  }
+
+  if (amount > balance) {
     return (
       <>
         Maximum amount to transfer is <BigNumberDisplay value={balance!!} decimals={decimals} />{" "}

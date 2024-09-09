@@ -1,5 +1,4 @@
-import BN from "bn.js";
-import { Address, beginCell, Cell, toNano } from "ton";
+import { Address, beginCell, toNano } from "@ton/ton";
 import { ContractDeployer } from "./contract-deployer";
 
 import { createDeployParams, waitForContractDeploy, waitForSeqno } from "./utils";
@@ -8,12 +7,13 @@ import {
   buildJettonOnchainMetadata,
   burn,
   mintBody,
+  readJettonMetadata,
   transfer,
   updateMetadataBody,
 } from "./jetton-minter";
-import { readJettonMetadata, changeAdminBody, JettonMetaDataKeys } from "./jetton-minter";
+import { changeAdminBody, JettonMetaDataKeys } from "./jetton-minter";
 import { getClient } from "./get-ton-client";
-import { cellToAddress, makeGetCall } from "./make-get-call";
+import { makeGetCall } from "./make-get-call";
 import { SendTransactionRequest, TonConnectUI } from "@tonconnect/ui-react";
 
 export const JETTON_DEPLOY_GAS = toNano(0.25);
@@ -40,61 +40,42 @@ export interface JettonDeployParams {
   };
   offchainUri?: string;
   owner: Address;
-  amountToMint: BN;
+  amountToMint: bigint;
 }
 
 class JettonDeployController {
-  async createJetton(
-    params: JettonDeployParams,
-    tonConnection: TonConnectUI,
-    walletAddress: string,
-  ): Promise<Address> {
+  async createJetton(params: JettonDeployParams, tonConnection: TonConnectUI): Promise<Address> {
     const contractDeployer = new ContractDeployer();
     const tc = await getClient();
-
-    // params.onProgress?.(JettonDeployState.BALANCE_CHECK);
     const balance = await tc.getBalance(params.owner);
-    if (balance.lt(JETTON_DEPLOY_GAS)) throw new Error("Not enough balance in deployer wallet");
+
+    if (balance < JETTON_DEPLOY_GAS) throw new Error("Not enough balance in deployer wallet");
+
     const deployParams = createDeployParams(params, params.offchainUri);
     const contractAddr = contractDeployer.addressForContract(deployParams);
 
-    if (await tc.isContractDeployed(contractAddr)) {
-      // params.onProgress?.(JettonDeployState.ALREADY_DEPLOYED);
-    } else {
+    const isDeployed = await tc.isContractDeployed(contractAddr);
+    if (!isDeployed) {
       await contractDeployer.deployContract(deployParams, tonConnection);
-      // params.onProgress?.(JettonDeployState.AWAITING_MINTER_DEPLOY);
       await waitForContractDeploy(contractAddr, tc);
     }
+
+    const cellForOwner = beginCell().storeAddress(params.owner).endCell();
 
     const ownerJWalletAddr = await makeGetCall(
       contractAddr,
       "get_wallet_address",
-      [beginCell().storeAddress(params.owner).endCell()],
-      ([addr]) => (addr as Cell).beginParse().readAddress()!,
+      cellForOwner,
       tc,
-    );
+    ).then((v) => v.readAddress());
 
-    // params.onProgress?.(JettonDeployState.AWAITING_JWALLET_DEPLOY);
     await waitForContractDeploy(ownerJWalletAddr, tc);
 
-    // params.onProgress?.(
-    //   JettonDeployState.VERIFY_MINT,
-    //   undefined,
-    //   contractAddr.toFriendly()
-    // ); // TODO better way of emitting the contract?
-
-    // params.onProgress?.(JettonDeployState.DONE);
     return contractAddr;
   }
 
   async burnAdmin(contractAddress: Address, tonConnection: TonConnectUI, walletAddress: string) {
-    // @ts-ignore
-    const tc = await getClient();
-    const waiter = await waitForSeqno(
-      tc.openWalletFromAddress({
-        source: Address.parse(walletAddress),
-      }),
-    );
+    const waiter = await waitForSeqno(walletAddress);
 
     const tx: SendTransactionRequest = {
       validUntil: Date.now() + 5 * 60 * 1000,
@@ -109,22 +90,16 @@ class JettonDeployController {
     };
 
     await tonConnection.sendTransaction(tx);
-
     await waiter();
   }
 
   async mint(
     tonConnection: TonConnectUI,
     jettonMaster: Address,
-    amount: BN,
+    amount: bigint,
     walletAddress: string,
   ) {
-    const tc = await getClient();
-    const waiter = await waitForSeqno(
-      tc.openWalletFromAddress({
-        source: Address.parse(walletAddress),
-      }),
-    );
+    const waiter = await waitForSeqno(walletAddress);
 
     const tx: SendTransactionRequest = {
       validUntil: Date.now() + 5 * 60 * 1000,
@@ -146,18 +121,12 @@ class JettonDeployController {
 
   async transfer(
     tonConnection: TonConnectUI,
-    amount: BN,
+    amount: bigint,
     toAddress: string,
     fromAddress: string,
     ownerJettonWallet: string,
   ) {
-    const tc = await getClient();
-
-    const waiter = await waitForSeqno(
-      tc.openWalletFromAddress({
-        source: Address.parse(fromAddress),
-      }),
-    );
+    const waiter = await waitForSeqno(fromAddress);
 
     const tx: SendTransactionRequest = {
       validUntil: Date.now() + 5 * 60 * 1000,
@@ -180,17 +149,11 @@ class JettonDeployController {
 
   async burnJettons(
     tonConnection: TonConnectUI,
-    amount: BN,
+    amount: bigint,
     jettonAddress: string,
     walletAddress: string,
   ) {
-    const tc = await getClient();
-
-    const waiter = await waitForSeqno(
-      tc.openWalletFromAddress({
-        source: Address.parse(walletAddress),
-      }),
-    );
+    const waiter = await waitForSeqno(walletAddress);
 
     const tx: SendTransactionRequest = {
       validUntil: Date.now() + 5 * 60 * 1000,
@@ -211,44 +174,44 @@ class JettonDeployController {
 
   async getJettonDetails(contractAddr: Address, owner: Address) {
     const tc = await getClient();
-    const minter = await makeGetCall(
-      contractAddr,
-      "get_jetton_data",
-      [],
-      async ([totalSupply, __, adminCell, contentCell]) => ({
-        ...(await readJettonMetadata(contentCell as unknown as Cell)),
-        admin: cellToAddress(adminCell),
-        totalSupply: totalSupply as BN,
-      }),
-      tc,
+
+    const minter = await makeGetCall(contractAddr, "get_jetton_data", null, tc).then(
+      async (reader) => {
+        const totalSupply = reader.readBigNumber();
+        reader.readBigNumber();
+        const admin = reader.readAddress();
+        const contentCell = await readJettonMetadata(reader.readCell());
+
+        return {
+          ...contentCell,
+          totalSupply,
+          admin,
+        };
+      },
     );
 
     const jWalletAddress = await makeGetCall(
       contractAddr,
       "get_wallet_address",
-      [beginCell().storeAddress(owner).endCell()],
-      ([addressCell]) => cellToAddress(addressCell),
+      beginCell().storeAddress(owner).endCell(),
       tc,
-    );
+    ).then((reader) => reader.readAddress());
 
     const isDeployed = await tc.isContractDeployed(jWalletAddress);
 
-    let jettonWallet;
-    if (isDeployed) {
-      jettonWallet = await makeGetCall(
-        jWalletAddress,
-        "get_wallet_data",
-        [],
-        ([amount, _, jettonMasterAddressCell]) => ({
-          balance: amount as unknown as BN,
-          jWalletAddress,
-          jettonMasterAddress: cellToAddress(jettonMasterAddressCell),
-        }),
-        tc,
-      );
-    } else {
-      jettonWallet = null;
-    }
+    const jettonWallet = isDeployed
+      ? await makeGetCall(jWalletAddress, "get_wallet_data", null, tc).then((reader) => {
+          const balance = reader.readBigNumber();
+          reader.readAddress(); // skip owner
+          const jettonMasterAddress = reader.readAddress();
+
+          return {
+            balance,
+            jWalletAddress,
+            jettonMasterAddress,
+          };
+        })
+      : null;
 
     return {
       minter,
@@ -264,12 +227,8 @@ class JettonDeployController {
     connection: TonConnectUI,
     walletAddress: string,
   ) {
-    const tc = await getClient();
-    const waiter = await waitForSeqno(
-      tc.openWalletFromAddress({
-        source: Address.parse(walletAddress),
-      }),
-    );
+    const waiter = await waitForSeqno(walletAddress);
+
     const body = updateMetadataBody(buildJettonOnchainMetadata(data));
     const tx: SendTransactionRequest = {
       validUntil: Date.now() + 5 * 60 * 1000,
@@ -294,14 +253,9 @@ class JettonDeployController {
       [s in JettonMetaDataKeys]?: string | undefined;
     },
     connection: TonConnectUI,
-    walltAddress: string,
+    walletAddress: string,
   ) {
-    const tc = await getClient();
-    const waiter = await waitForSeqno(
-      tc.openWalletFromAddress({
-        source: Address.parse(walltAddress),
-      }),
-    );
+    const waiter = await waitForSeqno(walletAddress);
 
     const tx: SendTransactionRequest = {
       validUntil: Date.now() + 5 * 60 * 1000,
