@@ -1,6 +1,6 @@
 {
   "name": "web",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "private": true,
   "homepage": "https://minter.ton.org/",
   "dependencies": {
@@ -14,7 +14,7 @@
     "@ton/core": "^0.57.0",
     "@ton/crypto": "^3.3.0",
     "@ton/ton": "^14.0.0",
-    "@tonconnect/ui-react": "^1.0.0-beta.6",
+    "@tonconnect/ui-react": "^2.0.9",
     "axios": "^1.7.7",
     "buffer": "^6.0.3",
     "notistack": "^2.0.5",

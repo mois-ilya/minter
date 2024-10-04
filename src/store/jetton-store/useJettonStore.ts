@@ -59,7 +59,8 @@ function useJettonStore() {
         console.log("empty");
         return;
       }
-      const _adminAddress = result.minter.admin?.toString() ?? zeroAddress().toString();
+      const _adminAddress =
+        result.minter.admin?.toString({ bounceable: false }) ?? zeroAddress().toString();
       const admin = isMyWallet && _adminAddress === connectedWalletAddress;
       const metadata = result.minter.metadata;
       let image: string | undefined;
