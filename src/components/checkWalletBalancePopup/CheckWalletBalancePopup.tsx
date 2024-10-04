@@ -62,7 +62,7 @@ export const CheckWalletBalancePopup = ({ showPopup, close }: CheckWalletBalance
           borderRadius: 40,
         }}>
         <SearchBarInput
-          placeholder="Jetton address"
+          placeholder="Wallet address"
           onPaste={(e: any) => setSearch(e.target.value)}
           onChange={(e) => setSearch(e.target.value)}
           value={search}
