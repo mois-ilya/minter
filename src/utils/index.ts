@@ -37,24 +37,23 @@ export const isValidAddress = (address: string, errorText?: string) => {
  *
  * Unlike `toNano`, this function is designed to convert numeric values with arbitrary precision
  */
-export function toDecimals(src: number | string, decimals: number | string): bigint {
+export function fromDecimals(src: string | bigint, decimals: number | string): bigint {
+  const decimalsNum = typeof decimals === "string" ? Number(decimals) : decimals;
+
+  if (!Number.isInteger(decimalsNum) || decimalsNum < 0 || decimalsNum > 255) {
+    throw new Error("Invalid decimals value. It must be an integer between 0 and 255.");
+  }
+
   const bigIntDecimals = 10n ** BigInt(decimals);
 
   if (typeof src === "bigint") {
     return src * bigIntDecimals;
   } else {
-    if (typeof src === "number") {
-      if (!Number.isFinite(src)) {
-        throw Error("Invalid number");
-      }
+    // It's too hard to reliably support numbers without losing precision when the precision can be up to 255. Use strings
+    // if (typeof src === 'number') {
 
-      if (Math.log10(src) <= 6) {
-        src = src.toLocaleString("en", { minimumFractionDigits: 9, useGrouping: false });
-      } else if (src - Math.trunc(src) === 0) {
-        src = src.toLocaleString("en", { maximumFractionDigits: 0, useGrouping: false });
-      } else {
-        throw Error("Not enough precision for a number value. Use string value instead");
-      }
+    if (src === "") {
+      throw Error("Invalid number");
     }
 
     // Check sign
@@ -68,24 +67,27 @@ export function toDecimals(src: number | string, decimals: number | string): big
     if (src === ".") {
       throw Error("Invalid number");
     }
-    let parts = src.split(".");
+    const parts = src.split(".");
     if (parts.length > 2) {
       throw Error("Invalid number");
     }
 
     // Prepare parts
-    let whole = parts[0];
-    let frac = parts[1];
+    let whole = parts[0] as string | undefined;
+    let frac = parts[1] as string | undefined;
     if (!whole) {
       whole = "0";
     }
+
+    if (frac && frac.length > decimalsNum) {
+      throw Error("Invalid number");
+    }
+
     if (!frac) {
       frac = "0";
     }
-    if (frac.length > 9) {
-      throw Error("Invalid number");
-    }
-    while (frac.length < 9) {
+
+    while (frac.length < decimalsNum) {
       frac += "0";
     }
 
@@ -98,7 +100,7 @@ export function toDecimals(src: number | string, decimals: number | string): big
   }
 }
 
-export function fromDecimals(num: bigint | number | string, decimals: number | string): string {
+export function toDecimals(num: bigint | number | string, decimals: number | string): string {
   const dec = Number(decimals);
   const strNum = BigInt(num)
     .toString()

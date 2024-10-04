@@ -1,5 +1,5 @@
 import NumberFormat from "react-number-format";
-import { fromDecimals } from "utils";
+import { toDecimals } from "utils";
 
 interface Props {
   value: bigint | number | string;
@@ -7,7 +7,7 @@ interface Props {
 }
 function BigNumberDisplay({ value, decimals }: Props) {
   if (decimals) {
-    value = fromDecimals(value.toString(), decimals);
+    value = toDecimals(value.toString(), decimals);
   }
   return <NumberFormat displayType="text" value={value.toString()} thousandSeparator={true} />;
 }

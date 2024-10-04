@@ -6,13 +6,13 @@ import { jettonDeployController } from "lib/deploy-controller";
 import { useState } from "react";
 import useJettonStore from "store/jetton-store/useJettonStore";
 import { Address } from "@ton/core";
-import { toDecimals } from "utils";
+import { fromDecimals } from "utils";
 import { AppButton } from "components/appButton";
 import { AppNumberInput } from "components/appInput";
 import { useTonAddress, useTonConnectUI } from "@tonconnect/ui-react";
 
 function MintJettonsAction() {
-  const [amount, setAmount] = useState<number | undefined>(undefined);
+  const [amount, setAmount] = useState<string | undefined>(undefined);
   const [open, setOpen] = useState(false);
   const [actionInProgress, setActionInProgress] = useState(false);
   const [tonconnect] = useTonConnectUI();
@@ -30,11 +30,11 @@ function MintJettonsAction() {
       return;
     }
 
-    if (!amount || amount === 0) {
+    if (!amount || amount === "0") {
       showNotification(`Minimum amount of ${symbol} to mint is 1`, "warning");
       return;
     }
-    const value = toDecimals(amount, decimals!);
+    const value = fromDecimals(amount, decimals!);
 
     try {
       setActionInProgress(true);
@@ -64,7 +64,7 @@ function MintJettonsAction() {
   };
 
   const onClose = () => {
-    setAmount(0);
+    setAmount(undefined);
     setOpen(false);
   };
 
@@ -76,7 +76,7 @@ function MintJettonsAction() {
           <AppNumberInput
             label={`Enter ${symbol} amount`}
             value={amount}
-            onChange={(value: number) => setAmount(value)}
+            onChange={(value) => setAmount(value)}
           />
           <AppButton onClick={onMint}>Submit</AppButton>
         </>

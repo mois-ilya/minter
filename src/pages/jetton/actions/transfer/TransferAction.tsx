@@ -7,7 +7,7 @@ import { validateTransfer } from "./utils";
 import { ButtonWrapper, TransferContent, TransferWrapper } from "./styled";
 import { AppHeading } from "components/appHeading";
 import { AppNumberInput, AppTextInput } from "components/appInput";
-import { toDecimals } from "utils";
+import { fromDecimals } from "utils";
 import { useRecoilState } from "recoil";
 import { jettonActionsState } from "pages/jetton/actions/jettonActions";
 import { useTonAddress, useTonConnectUI } from "@tonconnect/ui-react";
@@ -17,7 +17,7 @@ export const TransferAction = () => {
     useJettonStore();
 
   const [toAddress, setToAddress] = useState<string | undefined>(undefined);
-  const [amount, setAmount] = useState<number | undefined>(undefined);
+  const [amount, setAmount] = useState<string | undefined>(undefined);
   const { showNotification } = useNotification();
   const connectedWalletAddress = useTonAddress();
   const [tonconnect] = useTonConnectUI();
@@ -34,7 +34,7 @@ export const TransferAction = () => {
 
     const error = validateTransfer(
       toAddress,
-      toDecimals(amount, decimals),
+      fromDecimals(amount, decimals),
       balance,
       symbol,
       decimals,
@@ -48,7 +48,7 @@ export const TransferAction = () => {
     try {
       await jettonDeployController.transfer(
         tonconnect,
-        toDecimals(amount.toString(), decimals),
+        fromDecimals(amount.toString(), decimals),
         toAddress,
         connectedWalletAddress!,
         jettonWalletAddress,
@@ -90,7 +90,7 @@ export const TransferAction = () => {
         />
         <AppNumberInput
           label="Amount to transfer"
-          onChange={(value: number) => setAmount(value)}
+          onChange={(value) => setAmount(value)}
           value={amount}
         />
       </TransferContent>

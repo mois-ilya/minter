@@ -7,11 +7,11 @@ import { useState } from "react";
 import useJettonStore from "store/jetton-store/useJettonStore";
 import { AppButton } from "components/appButton";
 import { AppNumberInput } from "components/appInput";
-import { toDecimals } from "utils";
+import { fromDecimals } from "utils";
 import { useTonAddress, useTonConnectUI } from "@tonconnect/ui-react";
 
 function BurnJettonsAction() {
-  const [amount, setAmount] = useState<number | undefined>(undefined);
+  const [amount, setAmount] = useState<string | undefined>(undefined);
   const [open, setOpen] = useState(false);
   const {
     jettonMaster,
@@ -35,13 +35,13 @@ function BurnJettonsAction() {
       return;
     }
 
-    if (!amount || amount === 0) {
+    if (!amount || amount === "0") {
       showNotification(`Minimum amount to burn is 1 ${symbol}`, "warning");
       return;
     }
 
-    const valueDecimals = toDecimals(amount, decimals!);
-    const balanceDecimals = toDecimals(balance!!.toString(), decimals!);
+    const valueDecimals = fromDecimals(amount, decimals!);
+    const balanceDecimals = fromDecimals(balance!!.toString(), decimals!);
 
     if (valueDecimals > balanceDecimals) {
       const msg = (
@@ -76,7 +76,7 @@ function BurnJettonsAction() {
   };
 
   const onClose = () => {
-    setAmount(0);
+    setAmount(undefined);
     setOpen(false);
   };
 
@@ -88,7 +88,7 @@ function BurnJettonsAction() {
           <AppNumberInput
             label={`Enter ${symbol} amount`}
             value={amount}
-            onChange={(value: number) => setAmount(value)}
+            onChange={(value) => setAmount(value)}
           />
           <AppButton onClick={onBurn}>Submit</AppButton>
         </>

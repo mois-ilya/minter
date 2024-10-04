@@ -11,7 +11,7 @@ import useNotification from "hooks/useNotification";
 import { FormWrapper, ScreenHeading, StyledDescription, SubHeadingWrapper } from "./styles";
 import { Screen, ScreenContent } from "components/Screen";
 import analytics, { AnalyticsAction, AnalyticsCategory } from "services/analytics";
-import { getUrlParam, toDecimals } from "utils";
+import { getUrlParam, fromDecimals } from "utils";
 import { offchainFormSpec, onchainFormSpec } from "./data";
 import { Form } from "components/form";
 import { GithubButton } from "pages/deployer/githubButton";
@@ -60,7 +60,7 @@ function DeployerPage() {
         decimals: parseInt(decimals).toFixed(0),
       },
       offchainUri: data.offchainUri,
-      amountToMint: toDecimals(data.mintAmount, decimals ?? DEFAULT_DECIMALS),
+      amountToMint: fromDecimals(data.mintAmount, decimals ?? DEFAULT_DECIMALS),
     };
     setIsLoading(true);
     const deployParams = createDeployParams(params, data.offchainUri);
